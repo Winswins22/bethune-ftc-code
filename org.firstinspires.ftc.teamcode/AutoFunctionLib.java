@@ -14,7 +14,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @Autonomous(name="AutoFunctionLib", group="mode")
 
 public class AutoFunctionLib extends LinearOpMode {
-
+    
+    boolean didOnce = false; 
+    
     /* Declare OpMode members. */
     HardwarePushbot robot           = new HardwarePushbot();   // Use a Pushbot's hardware
     double          clawOffset      = 0;                       // Servo mid position
@@ -111,10 +113,20 @@ public class AutoFunctionLib extends LinearOpMode {
                 }
             }
             
-            if(detected){
+            if(detected || true){
                 //move(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
-                move(0.5, 1.0, 0.0, 2000);
-                move(0.0, -1.0, 0.0, 500);
+                
+                
+                // do it only once to make it easier to debug
+                if (!didOnce){
+                    move(0.0, 1.0, 0.0, 2000);
+                    move(1.0, 0.0, 0.0, 2000);
+                    move(0.0, -1.0, 0.0, 2000);
+                    move(-1.0, 0.0, 0.0, 2000);
+                    //didOnce = true;
+                }
+                
+
             }
             telemetry.addData("Something is detected: ", detected);
             telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
@@ -153,7 +165,7 @@ public class AutoFunctionLib extends LinearOpMode {
         int[] ticksToIncreaseBy = {0, 0, 0, 0};  
         
         for (int i = 0; i < speeds.length; i ++){
-            ticksToIncreaseBy[i] = (int)(speeds[i] * 2000);
+            ticksToIncreaseBy[i] = (int)(speeds[i] * 500);
         }
         
         return ticksToIncreaseBy;
