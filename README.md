@@ -1,4 +1,2 @@
-# bethune-ftc-code
-A collection of code from both Senior teams at Bethune CI.
-
-See branches for code from different teams.
+# bhub
+Code from the "BHub" control hub. Contains image recognition and auto code.
