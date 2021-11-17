@@ -113,7 +113,7 @@ public class AutoFunctionLib extends LinearOpMode {
                 }
             }
             
-            if(detected || true){
+            if(detected){
                 //move(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
                 
                 
