@@ -1,4 +1,4 @@
-# team-b
-A collection of code from team a on the control hub "FTC-a2O9"
+# team-a
+A collection of code from team a on the control hub "FTC-zLvn"
 
 See branches for code from different teams.
