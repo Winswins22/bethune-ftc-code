@@ -30,6 +30,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -53,10 +54,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class HardwarePushbot
 {
     /* Public OpMode members. */
-    public DcMotor  frontLeft   = null;
-    public DcMotor  frontRight  = null;
-    public DcMotor  backLeft     = null;
-    public DcMotor  backRight    = null;
+    public DcMotorEx  frontLeft   = null;
+    public DcMotorEx  frontRight  = null;
+    public DcMotorEx  backLeft     = null;
+    public DcMotorEx    backRight    = null;
     
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -73,16 +74,18 @@ public class HardwarePushbot
         hwMap = ahwMap;
 
         // Define and Initialize Motors
-        frontLeft  = hwMap.get(DcMotor.class, "LeftFront");
-        frontRight = hwMap.get(DcMotor.class, "RightFront");
-        backLeft    = hwMap.get(DcMotor.class, "LeftBack");
-        backRight    = hwMap.get(DcMotor.class, "RightBack");
+        frontLeft  = hwMap.get(DcMotorEx.class, "frontLeft");
+        frontRight = hwMap.get(DcMotorEx.class, "frontRight");
+        backLeft    = hwMap.get(DcMotorEx.class, "backLeft");
+        backRight    = hwMap.get(DcMotorEx.class, "backRight");
         
         // Set to FORWARD or REVERSE depending on motors on robot
-        frontRight.setDirection(DcMotor.Direction.FORWARD); 
-        backRight.setDirection(DcMotor.Direction.REVERSE);
-        frontLeft.setDirection(DcMotor.Direction.FORWARD); 
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
+        frontLeft.setDirection(DcMotorEx.Direction.REVERSE);
+        frontRight.setDirection(DcMotorEx.Direction.REVERSE);
+        backLeft.setDirection(DcMotorEx.Direction.REVERSE); 
+        backRight.setDirection(DcMotorEx.Direction.REVERSE);
+
+
     }
  }
 
