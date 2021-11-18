@@ -19,6 +19,7 @@ public class Main2 extends LinearOpMode {
     private ElapsedTime     runtime = new ElapsedTime();
 
     double speedMultiplier = 1.0;
+    double turningMultiplier = 0.7;
 
     @Override
     public void runOpMode() {
@@ -27,6 +28,8 @@ public class Main2 extends LinearOpMode {
         double drive;
         double turn;
         double max;
+        
+        
 
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
@@ -40,6 +43,8 @@ public class Main2 extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        
+        runMotorsWithEncoders(); //DEBUG; COMMENT OUT WHEN NECESSARy
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -71,6 +76,8 @@ public class Main2 extends LinearOpMode {
     public void mecanumDrive_Cartesian(double x, double y, double rotation)
 {
     double wheelSpeeds[] = new double[4];
+    
+    rotation = reduceRotation(rotation);
 
     wheelSpeeds[0] = x + y - rotation;
     wheelSpeeds[1] = -x + y + rotation;
@@ -84,12 +91,16 @@ public class Main2 extends LinearOpMode {
     robot.frontRight.setPower(wheelSpeeds[1]);
     robot.backLeft.setPower(-wheelSpeeds[2]);
     robot.backRight.setPower(wheelSpeeds[3]);
+    
+    
 
     telemetry.addData("front Left", robot.frontLeft.getPower());
     telemetry.addData("front Right", robot.frontRight.getPower());
     telemetry.addData("back Left", robot.backLeft.getPower());
     telemetry.addData("back Right", robot.backRight.getPower());
     telemetry.addData("speedMultiplier", speedMultiplier);
+    telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
+    telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
     telemetry.update();
 
 }   //end mecanumDrive_Cartesian
@@ -116,6 +127,28 @@ private void resetMotors(){
     robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
     robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
     robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
+}
+
+public void runMotorsWithEncoders(){
+        robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        
+        // reset target positions
+        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
+        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
+        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
+        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
+        
+        robot.frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    } 
+
+private double reduceRotation(double rotation){
+    return rotation * turningMultiplier; 
 }
 
 

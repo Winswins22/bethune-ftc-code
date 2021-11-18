@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import java.util.List;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
@@ -8,22 +9,32 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name="AutoFunctionLib", group="mode")
 
 public class AutoFunctionLib extends LinearOpMode {
     
-    boolean didOnce = false; 
+    //Approximate field length: 358.2cm
+    //approximate field width: 238.44cm
+    //approximate ticks to traverse width: trial 1: 3866 || trial 2: 3100
+    //TODO: Measure using driving mode instead
+    //approximate ticks to traverse length (DRIVE): trial 1: 3856 trial 2: 3449 trial 3:
+    public static final double TICKS_PER_METER_FB = 1624.37;
     
-    /* Declare OpMode members. */
-    HardwarePushbot robot           = new HardwarePushbot();   // Use a Pushbot's hardware
-    double          clawOffset      = 0;                       // Servo mid position
-    final double    CLAW_SPEED      = 0.02 ;                   // sets rate to move servo
+    //TODO
+    public static final double TICKS_PER_METER_LR = 0;
+    
+    HardwarePushbot robot = new HardwarePushbot(); //use this object for easy reference to components like motors.
     
     ElapsedTime elapsedTime = new ElapsedTime();
     
+    //Assumes that the bottom-left (red markers on left side of field) is 0,0. Measured in meters since ticks do not
+    //necessarily correspond to distance (e.g. ticks/m is different when strafing).
+    //Manipulated by moveTickFB and moveTickLR functions (yes, it'd be more intuitive if those functions were correspondingly
+    //in meters instead of ticks, but ticks gives us more precision) 
+    public static double estimatedX = 0;
+    public static double estimatedY = 0;
     
     //IMAGE RECOGNITION VARS
     private static final String TFOD_MODEL_ASSET = "FreightFrenzy_BCDM.tflite";
@@ -42,6 +53,7 @@ public class AutoFunctionLib extends LinearOpMode {
     private TFObjectDetector tfod;
     //END IMAGE DETECTION VARS
 
+    double initial = 0;
     @Override
     public void runOpMode() {
         double left;
@@ -55,7 +67,7 @@ public class AutoFunctionLib extends LinearOpMode {
          */
         robot.init(hardwareMap);
         
-        int initial = robot.frontLeft.getCurrentPosition();
+        initial = robot.frontLeft.getCurrentPosition();
         
         initVuforia();
         initTfod();
@@ -70,15 +82,14 @@ public class AutoFunctionLib extends LinearOpMode {
         // (typically 16/9).
         tfod.setZoom(2.5, 16.0/9.0);
 
-        // Send telemetry message to signify robot waiting;
         telemetry.addData("Robot", "Initialized");    //
         telemetry.update();
-
-        // Wait for the game to start (driver presses PLAY)
+ 
         waitForStart();
         
         initMotors();
-
+        
+        boolean didOnce = false; 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             
@@ -112,37 +123,31 @@ public class AutoFunctionLib extends LinearOpMode {
                     detected = false;
                 }
             }
-            
-            if(detected){
                 //move(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
                 
-                
-                // do it only once to make it easier to debug
-                if (!didOnce){
-                    move(0.0, 1.0, 0.0, 2000);
-                    move(1.0, 0.0, 0.0, 2000);
-                    move(0.0, -1.0, 0.0, 2000);
-                    move(-1.0, 0.0, 0.0, 2000);
-                    //didOnce = true;
-                }
-                
-
+            // do it only once to make it easier to debug
+            if (!didOnce){
+                //move(0.0, 1.0, 0.0, 0.1);
+                //move(1.0, 0.0, 0.0, 0.2);
+                //move(0.0, -1.0, 0.0, 0.2);
+                //move(-1.0, 0.0, 0.0, 0.2);
+                //didOnce = true;
             }
+            
             telemetry.addData("Something is detected: ", detected);
-            telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
-            telemetry.addData("frontLeft target pos", robot.frontLeft.getTargetPosition());
-            telemetry.addData("ticksDiff", robot.frontLeft.getTargetPosition() - initial);
+            telemetry.addData("frontLeft motor position: ", robot.frontLeft.getCurrentPosition());
+            telemetry.addData("backRight motor position: ", robot.backRight.getCurrentPosition());
+            telemetry.addData("(2 * FL - BR)(Forward/back): ", 2 * robot.frontLeft.getCurrentPosition() - robot.backRight.getCurrentPosition());
+            //telemetry.addData("frontLeft target pos", robot.frontLeft.getTargetPosition());
+            telemetry.addData("ticksDiff", robot.frontLeft.getCurrentPosition() - initial);
             telemetry.update();
             
         }
     }
     
     /**
-     * @param speeds. The speeds (between 0-1) that u would normally increase by
-     * @return the ticks to increase the motors by
+     * resets motor tick positions and target positions
      */
-     
-     
     public void initMotors(){
         robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -160,7 +165,8 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     } 
-     
+    
+    //Arbitrary; used in move() function
     public int[] translatePowerToTicks(double[] speeds){
         int[] ticksToIncreaseBy = {0, 0, 0, 0};  
         
@@ -171,77 +177,151 @@ public class AutoFunctionLib extends LinearOpMode {
         return ticksToIncreaseBy;
     }
     
-    public void move(double x, double y, double rotation, double velocity){
-    double wheelSpeeds[] = new double[4];
-    int[] ticksToIncreaseBy = {0, 0, 0, 0};
+    /**
+     * Avoid using this in the autonomous mode since we want the bot to track its position
+     * in the field
+     */
+    public void move(double x, double y, double rotation, double power){
+        double wheelSpeeds[] = new double[4];
+        int[] ticksToIncreaseBy = {0, 0, 0, 0};
+        // negate x and y to reverse travel directions so that it travels properly
+        x = -x;
+        y = -y;
 
-    wheelSpeeds[0] = -(x + y - rotation);
-    wheelSpeeds[1] = -x + y + rotation;
-    wheelSpeeds[2] = -(-x + y - rotation);
-    wheelSpeeds[3] = x + y + rotation;
+        wheelSpeeds[0] = -(x + y - rotation); //FL
+        wheelSpeeds[1] = -x + y + rotation; //FR
+        wheelSpeeds[2] = -(-x + y - rotation); //BL
+        wheelSpeeds[3] = x + y + rotation; //BR
     
-    ticksToIncreaseBy = translatePowerToTicks(wheelSpeeds);
+        ticksToIncreaseBy = translatePowerToTicks(wheelSpeeds);
     
-    //setAllVelocity(velocity);
+        //setAllVelocity(velocity);
     
-    // telemetry.addData("frontLeft instructions", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
-    // telemetry.addData("frontRight instructions", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
-    // telemetry.addData("backLeft instructions", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
-    // telemetry.addData("backRight instructions", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
+        // telemetry.addData("frontLeft instructions", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
+        // telemetry.addData("frontRight instructions", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
+        // telemetry.addData("backLeft instructions", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
+        // telemetry.addData("backRight instructions", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
     
-    robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticksToIncreaseBy[0]);
-    robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + ticksToIncreaseBy[1]);
-    robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + ticksToIncreaseBy[2]);
-    robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticksToIncreaseBy[3]);
+        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticksToIncreaseBy[0]);
+        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + ticksToIncreaseBy[1]);
+        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + ticksToIncreaseBy[2]);
+        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticksToIncreaseBy[3]);
     
-    // Turn On RUN_TO_POSITION
-    robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    robot.backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        // Turn On RUN_TO_POSITION
+        robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     
-    // Start motion;
-    robot.frontLeft.setPower(0.1);
-    robot.frontRight.setPower(0.1);
-    robot.backLeft.setPower(0.1);
-    robot.backRight.setPower(0.1);
+        // Start motion;
+        robot.frontLeft.setPower(power);
+        robot.frontRight.setPower(power);
+        robot.backLeft.setPower(power);
+        robot.backRight.setPower(power);
     
-    
-    while (opModeIsActive() && 
-        (robot.frontLeft.isBusy() || robot.frontRight.isBusy() || robot.backLeft.isBusy() || robot.backRight.isBusy()) ) {
+        while (opModeIsActive() && 
+            (robot.frontLeft.isBusy() || robot.frontRight.isBusy() || robot.backLeft.isBusy() || robot.backRight.isBusy()) ) {
 
-        // Display it for the driver.
-        telemetry.addData("Motors are running to Positions", "");
-        telemetry.addData("frontLeft progress", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
-        telemetry.addData("frontRight progress", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
-        telemetry.addData("backLeft progress", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
-        telemetry.addData("backRight progress", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
-        telemetry.update();
+                // Display it for the driver.
+            telemetry.addData("Motors are running to Positions", "");
+            telemetry.addData("frontLeft progress", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
+            telemetry.addData("frontRight progress", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
+            telemetry.addData("backLeft progress", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
+            telemetry.addData("backRight progress", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
+            telemetry.addData("ticksDiff from start pos", robot.frontLeft.getCurrentPosition() - initial);
+            telemetry.update();
+        }
+    
+        // Stop all motion;
+        robot.frontLeft.setPower(0);
+        robot.frontRight.setPower(0);
+        robot.backLeft.setPower(0);
+        robot.backRight.setPower(0);
+        
+        initMotors();
+    
+        // TODO add encoder stuffs
+        
+        //normalize(wheelSpeeds);
+    
+        // robot.frontLeft.setPower(-wheelSpeeds[0]);
+        // robot.frontRight.setPower(wheelSpeeds[1]);
+        // robot.backLeft.setPower(-wheelSpeeds[2]);
+        // robot.backRight.setPower(wheelSpeeds[3]);
+        
+        // telemetry.addData("front Left", robot.frontLeft.getPower());
+        // telemetry.addData("front Right", robot.frontRight.getPower()); 
+        // telemetry.addData("back Left", robot.backLeft.getPower()); 
+        // telemetry.addData("back Right", robot.backRight.getPower()); 
+        // telemetry.update();
     }
     
-    // Stop all motion;
-    robot.frontLeft.setPower(0);
-    robot.frontRight.setPower(0);
-    robot.backLeft.setPower(0);
-    robot.backRight.setPower(0);
-    
-    initMotors();
-    
-    // TODO add encoder stuffs
-    
-    //normalize(wheelSpeeds);
-
-    // robot.frontLeft.setPower(-wheelSpeeds[0]);
-    // robot.frontRight.setPower(wheelSpeeds[1]);
-    // robot.backLeft.setPower(-wheelSpeeds[2]);
-    // robot.backRight.setPower(wheelSpeeds[3]);
-    
-    // telemetry.addData("front Left", robot.frontLeft.getPower());
-    // telemetry.addData("front Right", robot.frontRight.getPower()); 
-    // telemetry.addData("back Left", robot.backLeft.getPower()); 
-    // telemetry.addData("back Right", robot.backRight.getPower()); 
-    // telemetry.update();
+    public void setAllVelocity(double velocity){
+        robot.frontLeft.setVelocity(velocity);
+        robot.frontRight.setVelocity(velocity);
+        robot.backLeft.setVelocity(velocity);
+        robot.backRight.setVelocity(velocity);
     }
+    
+    //positive ticks for forward, negative ticks for backward
+    public void moveTickFB(int ticks, int velocityTicks){
+    
+        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticks); //FL
+        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + ticks); //FR
+        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + ticks); //BL
+        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticks); //BR`
+    
+        robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        
+        robot.frontLeft.setVelocity(velocityTicks);
+        robot.frontRight.setVelocity(velocityTicks);
+        robot.backLeft.setVelocity(velocityTicks);
+        robot.backRight.setVelocity(velocityTicks);
+    }
+    
+    //positive ticks for strafe right, negative ticks for strafe left
+    public void moveTickLR(int ticks, int velocityTicks){
+    
+        //TODO: unfinished; need to adjust for motor orientation; this currently assumes that 
+        //the wheels rotate forward when positive, and rotate backward when negative
+        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticks); //FL
+        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() - ticks); //FR
+        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() - ticks); //BL
+        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticks); //BR`
+    
+        robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        
+        robot.frontLeft.setVelocity(velocityTicks);
+        robot.frontRight.setVelocity(velocityTicks);
+        robot.backLeft.setVelocity(velocityTicks);
+        robot.backRight.setVelocity(velocityTicks);
+    }
+    
+    
+    public static double ticksToMetersFB (int ticks){
+        return TICKS_PER_METER_FB * ticks;
+    }
+    
+    public static int metersToTicksFB (double meters){
+        return (int)(meters * TICKS_PER_METER_FB);
+    }
+    
+    public static double ticksToMetersLR (int ticks){
+        return TICKS_PER_METER_LR * ticks;
+    }
+    
+    public static int metersToTicksLR (double meters){
+        return (int)(meters * TICKS_PER_METER_LR);
+    }
+    
+    
+    
     
     private void initVuforia() {
         /*
@@ -268,14 +348,12 @@ public class AutoFunctionLib extends LinearOpMode {
        tfodParameters.minResultConfidence = 0.8f;
        tfodParameters.isModelTensorFlow2 = true;
        tfodParameters.inputSize = 320;
+       //tfodParameters.setThreads(4);
+       
        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
     }
     
-    public void setAllVelocity(double velocity){
-        robot.frontLeft.setVelocity(velocity);
-        robot.frontRight.setVelocity(velocity);
-        robot.backLeft.setVelocity(velocity);
-        robot.backRight.setVelocity(velocity);
-    }
+    
+    
 }
