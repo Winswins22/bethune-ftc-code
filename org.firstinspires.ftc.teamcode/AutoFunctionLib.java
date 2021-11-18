@@ -24,6 +24,8 @@ public class AutoFunctionLib extends LinearOpMode {
     double          clawOffset      = 0;                       // Servo mid position
     final double    CLAW_SPEED      = 0.02 ;                   // sets rate to move servo
     
+    int initial = 0;
+    
     ElapsedTime elapsedTime = new ElapsedTime();
     
     
@@ -57,7 +59,7 @@ public class AutoFunctionLib extends LinearOpMode {
          */
         robot.init(hardwareMap);
         
-        int initial = robot.frontLeft.getCurrentPosition();
+        initial = robot.frontLeft.getCurrentPosition();
         
         initVuforia();
         initTfod();
@@ -116,26 +118,26 @@ public class AutoFunctionLib extends LinearOpMode {
                 }
             }
             
-            if(detected){
+            if(detected || true){
                 //move(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
                 
-                /*
+                
                 // do it only once to make it easier to debug
                 if (!didOnce){
-                    move(0.0, 1.0, 0.0, 0.5);
-                    move(1.0, 0.0, 0.0, 0.5);
-                    move(0.0, -1.0, 0.0, 0.5);
-                    move(-1.0, 0.0, 0.0, 0.5);
+                    move(0.0, -1.0, 0.0, 1);
+                    //move(1.0, 0.0, 0.0, 0.2);
+                    //move(0.0, -1.0, 0.0, 0.2);
+                    //move(-1.0, 0.0, 0.0, 0.2);
                     //didOnce = true;
                 }
-                */
+                
 
             }
             telemetry.addData("Something is detected: ", detected);
             telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
             telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
             //telemetry.addData("frontLeft target pos", robot.frontLeft.getTargetPosition());
-            telemetry.addData("ticksDiff", robot.frontLeft.getTargetPosition() - initial);
+            telemetry.addData("ticksDiff", robot.frontLeft.getCurrentPosition() - initial);
             telemetry.update();
             
         }
@@ -169,7 +171,7 @@ public class AutoFunctionLib extends LinearOpMode {
         int[] ticksToIncreaseBy = {0, 0, 0, 0};  
         
         for (int i = 0; i < speeds.length; i ++){
-            ticksToIncreaseBy[i] = (int)(speeds[i] * 500);
+            ticksToIncreaseBy[i] = (int)(speeds[i] * 5000);
         }
         
         return ticksToIncreaseBy;
@@ -178,11 +180,14 @@ public class AutoFunctionLib extends LinearOpMode {
     public void move(double x, double y, double rotation, double power){
     double wheelSpeeds[] = new double[4];
     int[] ticksToIncreaseBy = {0, 0, 0, 0};
+    // negate x and y to reverse travel directions so that it travels properly
+    x = -x;
+    //y = -y;
 
-    wheelSpeeds[0] = -(x + y - rotation);
-    wheelSpeeds[1] = -x + y + rotation;
-    wheelSpeeds[2] = -(-x + y - rotation);
-    wheelSpeeds[3] = x + y + rotation;
+    wheelSpeeds[0] = (x + y - rotation);
+    wheelSpeeds[1] = (-x + y + rotation);
+    wheelSpeeds[2] = (-x + y - rotation);
+    wheelSpeeds[3] = (x + y + rotation);
     
     ticksToIncreaseBy = translatePowerToTicks(wheelSpeeds);
     
@@ -194,9 +199,9 @@ public class AutoFunctionLib extends LinearOpMode {
     // telemetry.addData("backRight instructions", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
     
     robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticksToIncreaseBy[0]);
-    robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + ticksToIncreaseBy[1]);
+    robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() - ticksToIncreaseBy[1]);
     robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + ticksToIncreaseBy[2]);
-    robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticksToIncreaseBy[3]);
+    robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() - ticksToIncreaseBy[3]);
     
     // Turn On RUN_TO_POSITION
     robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -219,6 +224,11 @@ public class AutoFunctionLib extends LinearOpMode {
         telemetry.addData("frontRight progress", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
         telemetry.addData("backLeft progress", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
         telemetry.addData("backRight progress", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
+        telemetry.addData("frontLeft target", robot.frontLeft.getTargetPosition());
+        telemetry.addData("frontRight target", robot.frontRight.getTargetPosition());
+        telemetry.addData("backLeft target", robot.backLeft.getTargetPosition());
+        telemetry.addData("backRight target", robot.backRight.getTargetPosition());
+        telemetry.addData("ticksDiff from start pos", robot.frontLeft.getCurrentPosition() - initial);
         telemetry.update();
     }
     
@@ -251,7 +261,12 @@ public class AutoFunctionLib extends LinearOpMode {
     }
     
     public static int metersToTicks (double meters){
-        return (meters / TICKS_PER_METER) * ticks;
+//         org/firstinspires/ftc/teamcode/AutoFunctionLib.java line 254, column 45: ERROR: cannot find symbol
+//   symbol:   variable ticks
+//   location: class org.firstinspires.ftc.teamcode.AutoFunctionLib
+        
+        //return (meters / TICKS_PER_METER) * ticks;
+        return 0;
     }
     
     private void initVuforia() {
