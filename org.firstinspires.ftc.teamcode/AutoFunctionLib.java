@@ -15,7 +15,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class AutoFunctionLib extends LinearOpMode {
     
-    boolean didOnce = false; 
+    //Approximate field length: 358.2cm
+    //approximate field width: 238.44cm
+    public static final double TICKS_PER_METER = 0;
     
     /* Declare OpMode members. */
     HardwarePushbot robot           = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -73,12 +75,13 @@ public class AutoFunctionLib extends LinearOpMode {
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Robot", "Initialized");    //
         telemetry.update();
-
+ 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         
         initMotors();
-
+        
+        boolean didOnce = false; 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             
@@ -116,21 +119,22 @@ public class AutoFunctionLib extends LinearOpMode {
             if(detected){
                 //move(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
                 
-                
+                /*
                 // do it only once to make it easier to debug
                 if (!didOnce){
-                    move(0.0, 1.0, 0.0, 2000);
-                    move(1.0, 0.0, 0.0, 2000);
-                    move(0.0, -1.0, 0.0, 2000);
-                    move(-1.0, 0.0, 0.0, 2000);
+                    move(0.0, 1.0, 0.0, 0.5);
+                    move(1.0, 0.0, 0.0, 0.5);
+                    move(0.0, -1.0, 0.0, 0.5);
+                    move(-1.0, 0.0, 0.0, 0.5);
                     //didOnce = true;
                 }
-                
+                */
 
             }
             telemetry.addData("Something is detected: ", detected);
             telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
-            telemetry.addData("frontLeft target pos", robot.frontLeft.getTargetPosition());
+            telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
+            //telemetry.addData("frontLeft target pos", robot.frontLeft.getTargetPosition());
             telemetry.addData("ticksDiff", robot.frontLeft.getTargetPosition() - initial);
             telemetry.update();
             
@@ -171,7 +175,7 @@ public class AutoFunctionLib extends LinearOpMode {
         return ticksToIncreaseBy;
     }
     
-    public void move(double x, double y, double rotation, double velocity){
+    public void move(double x, double y, double rotation, double power){
     double wheelSpeeds[] = new double[4];
     int[] ticksToIncreaseBy = {0, 0, 0, 0};
 
@@ -201,11 +205,10 @@ public class AutoFunctionLib extends LinearOpMode {
     robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     
     // Start motion;
-    robot.frontLeft.setPower(0.1);
-    robot.frontRight.setPower(0.1);
-    robot.backLeft.setPower(0.1);
-    robot.backRight.setPower(0.1);
-    
+    robot.frontLeft.setPower(power);
+    robot.frontRight.setPower(power);
+    robot.backLeft.setPower(power);
+    robot.backRight.setPower(power);
     
     while (opModeIsActive() && 
         (robot.frontLeft.isBusy() || robot.frontRight.isBusy() || robot.backLeft.isBusy() || robot.backRight.isBusy()) ) {
@@ -241,6 +244,14 @@ public class AutoFunctionLib extends LinearOpMode {
     // telemetry.addData("back Left", robot.backLeft.getPower()); 
     // telemetry.addData("back Right", robot.backRight.getPower()); 
     // telemetry.update();
+    }
+    
+    public static double ticksToMeters (int ticks){
+        return TICKS_PER_METER * (double)ticks;
+    }
+    
+    public static int metersToTicks (double meters){
+        return (meters / TICKS_PER_METER) * ticks;
     }
     
     private void initVuforia() {
