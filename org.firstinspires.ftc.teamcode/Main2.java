@@ -70,66 +70,66 @@ public class Main2 extends LinearOpMode {
                 }
             }
 
-            mecanumDrive_Cartesian(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
+            mecanumDrive_Cartesian(gamepad1.left_stick_x, gamepad1.right_stick_y);
             }
         }
-    public void mecanumDrive_Cartesian(double x, double y, double rotation)
-{
-    double wheelSpeeds[] = new double[4];
+    public void mecanumDrive_Cartesian(double y, double rotation)
+    {
+        double wheelSpeeds[] = new double[4];
+        
+        rotation = reduceRotation(rotation);
     
-    rotation = reduceRotation(rotation);
-
-    wheelSpeeds[0] = x + y - rotation;
-    wheelSpeeds[1] = -x + y + rotation;
-    wheelSpeeds[2] = -x + y - rotation;
-    wheelSpeeds[3] = x + y + rotation;
-
-    //normalize(wheelSpeeds);
-    reduceSpeeds(wheelSpeeds, speedMultiplier);
-
-    robot.frontLeft.setPower(-wheelSpeeds[0]);
-    robot.frontRight.setPower(wheelSpeeds[1]);
-    robot.backLeft.setPower(-wheelSpeeds[2]);
-    robot.backRight.setPower(wheelSpeeds[3]);
+        wheelSpeeds[0] = y - rotation;
+        wheelSpeeds[1] = y + rotation;
+        wheelSpeeds[2] = y - rotation;
+        wheelSpeeds[3] = y + rotation;
     
+        //normalize(wheelSpeeds);
+        reduceSpeeds(wheelSpeeds, speedMultiplier);
     
+        robot.frontLeft.setPower(-wheelSpeeds[0]);
+        robot.frontRight.setPower(wheelSpeeds[1]);
+        robot.backLeft.setPower(-wheelSpeeds[2]);
+        robot.backRight.setPower(wheelSpeeds[3]);
+        
+        
+    
+        telemetry.addData("front Left", robot.frontLeft.getPower());
+        telemetry.addData("front Right", robot.frontRight.getPower());
+        telemetry.addData("back Left", robot.backLeft.getPower());
+        telemetry.addData("back Right", robot.backRight.getPower());
+        telemetry.addData("speedMultiplier", speedMultiplier);
+        telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
+        telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
+        telemetry.update();
+    
+    }   //end mecanumDrive_Cartesian
 
-    telemetry.addData("front Left", robot.frontLeft.getPower());
-    telemetry.addData("front Right", robot.frontRight.getPower());
-    telemetry.addData("back Left", robot.backLeft.getPower());
-    telemetry.addData("back Right", robot.backRight.getPower());
-    telemetry.addData("speedMultiplier", speedMultiplier);
-    telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
-    telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
-    telemetry.update();
-
-}   //end mecanumDrive_Cartesian
-
-private void reduceSpeeds(double[] wheelSpeeds, double multiplier){
-    for (int i = 0; i < wheelSpeeds.length; i ++){
-        wheelSpeeds[i] = wheelSpeeds[i] * multiplier;
+    private void reduceSpeeds(double[] wheelSpeeds, double multiplier){
+        for (int i = 0; i < wheelSpeeds.length; i ++){
+            wheelSpeeds[i] = wheelSpeeds[i] * multiplier;
+        }
     }
-}
 
-private void resetMotors(){
-    robot.frontLeft.setPower(0);
-    robot.frontRight.setPower(0);
-    robot.backLeft.setPower(0);
-    robot.backRight.setPower(0);
-    
-    robot.frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    robot.frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    robot.backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    robot.backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    
-    // reset target positions
-    robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
-    robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
-    robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
-    robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
-}
+    private void resetMotors(){
+        robot.frontLeft.setPower(0);
+        robot.frontRight.setPower(0);
+        robot.backLeft.setPower(0);
+        robot.backRight.setPower(0);
+        
+        robot.frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        
+        // reset target positions
+        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
+        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
+        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
+        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
+    }
 
-public void runMotorsWithEncoders(){
+    public void runMotorsWithEncoders(){
         robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -147,9 +147,9 @@ public void runMotorsWithEncoders(){
         robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     } 
 
-private double reduceRotation(double rotation){
-    return rotation * turningMultiplier; 
-}
+    private double reduceRotation(double rotation){
+        return rotation * turningMultiplier; 
+    }
 
 
 // private void normalize(double[] wheelSpeeds)
