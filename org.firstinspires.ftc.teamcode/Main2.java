@@ -21,8 +21,12 @@ public class Main2 extends LinearOpMode {
     double speedMultiplier = 1.0;
     double turningMultiplier = 0.7;
 
+    
     @Override
     public void runOpMode() {
+        
+
+        
         double left;
         double right;
         double drive;
@@ -52,8 +56,8 @@ public class Main2 extends LinearOpMode {
             // Run wheels in POV mode (note: The joystick goes negative when pushed forwards, so negate it)
             // In this mode the Left stick moves the robot fwd and back, the Right stick turns left and right.
             // This way it's also easy to just drive straight, or just turn.
-            drive = -gamepad1.left_stick_y;
-            turn  =  gamepad1.right_stick_x;
+            drive = gamepad1.left_stick_y;
+            turn  = gamepad1.right_stick_x;
             
             // speed multiplier
             if (gamepad1.dpad_down){
@@ -70,7 +74,7 @@ public class Main2 extends LinearOpMode {
                 }
             }
 
-            mecanumDrive_Cartesian(gamepad1.left_stick_x, gamepad1.right_stick_y);
+            mecanumDrive_Cartesian(drive, turn);
             }
         }
     public void mecanumDrive_Cartesian(double y, double rotation)
@@ -175,3 +179,6 @@ public class Main2 extends LinearOpMode {
 //     }
 // }   //normalize
 }//end class
+
+
+
