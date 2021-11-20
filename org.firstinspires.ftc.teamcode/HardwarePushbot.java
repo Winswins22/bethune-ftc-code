@@ -54,12 +54,12 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class HardwarePushbot
 {
     /* Public OpMode members. */
-    public DcMotorEx  frontLeft   = null;
-    public DcMotorEx  frontRight  = null;
-    public DcMotorEx  backLeft     = null;
-    public DcMotorEx  backRight    = null;
+    public DcMotorEx  frontLeft  = null;
+    public DcMotorEx  frontRight = null;
+    public DcMotorEx  backLeft   = null;
+    public DcMotorEx  backRight  = null;
     public DcMotor  duckWheel    = null;
-    public DcMotor  intake      = null;
+    public DcMotor Intake        = null;
     
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -80,8 +80,9 @@ public class HardwarePushbot
         frontRight = hwMap.get(DcMotorEx.class, "RightFront");
         backLeft    = hwMap.get(DcMotorEx.class, "LeftBack");
         backRight    = hwMap.get(DcMotorEx.class, "RightBack");
-        duckWheel = hwMap.get(DcMotor.class, "duck");
-        intake = hwMap.get(DcMotor.class, "intake");
+        duckWheel = hwMap.get(DcMotor.class, "Duck");
+        Intake = hwMap.get(DcMotor.class, "Intake");
+        //intake = hwMap.StringIndexOutOfBoundsException(DcMotor.class, "intake");
         
         // Set to FORWARD or REVERSE depending on motors on robot
         frontRight.setDirection(DcMotor.Direction.FORWARD); 
@@ -89,6 +90,7 @@ public class HardwarePushbot
         frontLeft.setDirection(DcMotor.Direction.FORWARD); 
         backLeft.setDirection(DcMotor.Direction.REVERSE);
         duckWheel.setDirection(DcMotor.Direction.REVERSE);
+        Intake.setDirection(DcMotor.Direction.FORWARD);
     }
  }
 

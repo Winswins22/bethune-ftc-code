@@ -17,7 +17,18 @@ public class AutoFunctionLib extends LinearOpMode {
     
     //Approximate field length: 358.2cm
     //approximate field width: 238.44cm
-    public static final double TICKS_PER_METER = 0;
+    
+    // Ticks to move across the length: 10000
+    // Ticks to move across the width: 6000
+    // Approx ticks/m: ~ 2516-2792
+    // Ticks to strafe across the length:
+    // Ticks to strafe across the width:
+    public static final double TICKS_PER_METER = 3000;
+    public static final int TICKS_ROTATE_90_DEGREES = 1350;
+    // meters to move across 1 floor tile 
+    public static final double METERS_PER_TILE = 0.6;
+    // meters to move diagonally across 1 floor tile. Calculated by experimentation
+    public static final double METERS_PER_DIAGONAL_TILE = 1.3;
     
     /* Declare OpMode members. */
     HardwarePushbot robot           = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -58,6 +69,13 @@ public class AutoFunctionLib extends LinearOpMode {
          * The init() method of the hardware class does all the work here
          */
         robot.init(hardwareMap);
+        
+        // Set the proper directions for the motors to move
+        robot.frontRight.setDirection(DcMotor.Direction.REVERSE); 
+        robot.backRight.setDirection(DcMotor.Direction.FORWARD);
+        robot.frontLeft.setDirection(DcMotor.Direction.FORWARD); 
+        robot.backLeft.setDirection(DcMotor.Direction.REVERSE);
+        
         
         initial = robot.frontLeft.getCurrentPosition();
         
@@ -124,11 +142,25 @@ public class AutoFunctionLib extends LinearOpMode {
                 
                 // do it only once to make it easier to debug
                 if (!didOnce){
-                    move(0.0, -1.0, 0.0, 1);
-                    //move(1.0, 0.0, 0.0, 0.2);
-                    //move(0.0, -1.0, 0.0, 0.2);
-                    //move(-1.0, 0.0, 0.0, 0.2);
-                    //didOnce = true;
+                    
+                    // forwards
+                    moveMeters(0, 1, 0, 0.5, 1.0);
+                    // rotate
+                    move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    // pick up box
+                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
+                    // rotate
+                    move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    // move to right before tile
+                    moveMeters(0, 1, 0, 0.5, 1.0 - METERS_PER_TILE);
+                    // strafe left and right for demo
+                    moveMeters(1, 0, 0, 0.5, METERS_PER_TILE);
+                    moveMeters(-1, 0, 0, 0.5, METERS_PER_TILE);
+                    // strafe diagonally back to start position
+                    moveMeters(1, 1, 0, 0.5, METERS_PER_DIAGONAL_TILE);
+                    
+                    
+                    didOnce = true;
                 }
                 
 
@@ -167,30 +199,75 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     } 
      
-    public int[] translatePowerToTicks(double[] speeds){
-        int[] ticksToIncreaseBy = {0, 0, 0, 0};  
+    // public int[] translatePowerToTicks(double[] speeds){
+    //     int[] ticksToIncreaseBy = {0, 0, 0, 0};  
         
-        for (int i = 0; i < speeds.length; i ++){
-            ticksToIncreaseBy[i] = (int)(speeds[i] * 5000);
-        }
+    //     for (int i = 0; i < speeds.length; i ++){
+    //         ticksToIncreaseBy[i] = (int)(speeds[i] * 500);
+    //     }
         
-        return ticksToIncreaseBy;
+    //     return ticksToIncreaseBy;
+    // }
+    
+    // overidden function to accept meters as target intead of ticks
+    // see move() function below for docs
+    public void moveMeters(int x, int y, int rotation, double power, double metersTarget){
+        move (x, y, rotation, power, (int)(metersTarget * TICKS_PER_METER));
     }
     
-    public void move(double x, double y, double rotation, double power){
+    /**
+     * public void move(int x, int y, int rotation, double power, int ticksTarget)
+     * 
+     * Moves the robot by translating simulated gamepad instructions to autonomous movement.
+     * Allows movement in 8 directions (North, Northeast, East, ...) and can rotate CW and CCW.
+     * 
+     * Samples:
+     *   Move forwards at max speed:
+     *     move(0, 1, 0, 1.0, INSERT_TICKS_HERE);
+     *   Strafe right:
+     *     move(1, 0, 1, 1.0, INSERT_TICKS_HERE);
+     *   Rotate 90 degrees clockwise:
+     *     move(0, 0, -1, 1.0, TICKS_ROTATE_90_DEGREES);
+     * 
+     * @param int x. The x-axis of the right gamestick. Takes in -1, 0, or 1. Changes movement 
+     *               directions of the wheels to strafe to the left, stop, or strafe to the right, respectively.
+     * @param int y. The y-axis of the right gamestick. Takes in -1, 0, or 1. Changes movement 
+     *               directions of the wheels to move backwards, stop, or move forwards, respectively.
+     * @param int rotation. The x-axis of the left gamestick. Takes in -1, 0, or 1. Changes rotation 
+     *                      directions of the wheels to rotate to the left, no rotate, or to the right, respectively.
+     * @param double power. The power to be delivered to the motors, a double between [-1, 1].
+     *                      Setting to a negative value will invert the movement, and a bigger number
+     *                      will increase the speed of the movement.
+     * @param int ticksTarget. The amount of ticks for the motors to travel, given the gamepad
+     *                         instructions above. If you wish to use meters instead of ticks, see 
+     *                         moveMeters() and the constants at the top of AutoFunctionLib.java.
+     */
+    public void move(int x, int y, int rotation, double power, int ticksTarget){
+    // the simulated gamepad instructions
     double wheelSpeeds[] = new double[4];
-    int[] ticksToIncreaseBy = {0, 0, 0, 0};
-    // negate x and y to reverse travel directions so that it travels properly
-    x = -x;
-    //y = -y;
+    // the ticks for the motors to run to
+    int[] tickTargets = {0, 0, 0, 0};
 
+    // translate simulated gamepad inputs into their speeds to use to caclulate ticksTarget
     wheelSpeeds[0] = (x + y - rotation);
     wheelSpeeds[1] = (-x + y + rotation);
     wheelSpeeds[2] = (-x + y - rotation);
     wheelSpeeds[3] = (x + y + rotation);
     
-    ticksToIncreaseBy = translatePowerToTicks(wheelSpeeds);
+    // make motors travel to ticksTarget based on simulated gamepad movements
+    for (int i = 0; i < wheelSpeeds.length; i ++){
+        if (wheelSpeeds[i] == 0){
+            tickTargets[i] = 0;
+        }
+        else if (wheelSpeeds[i] > 0){
+            tickTargets[i] = ticksTarget;
+        }
+        else if (wheelSpeeds[i] < 0){
+            tickTargets[i] = -ticksTarget;
+        }
+    }
     
+    //ticksToIncreaseBy = translatePowerToTicks(wheelSpeeds);
     //setAllVelocity(velocity);
     
     // telemetry.addData("frontLeft instructions", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
@@ -198,10 +275,10 @@ public class AutoFunctionLib extends LinearOpMode {
     // telemetry.addData("backLeft instructions", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
     // telemetry.addData("backRight instructions", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
     
-    robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticksToIncreaseBy[0]);
-    robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() - ticksToIncreaseBy[1]);
-    robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + ticksToIncreaseBy[2]);
-    robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() - ticksToIncreaseBy[3]);
+    robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + tickTargets[0]);
+    robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + tickTargets[1]);
+    robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + tickTargets[2]);
+    robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + tickTargets[3]);
     
     // Turn On RUN_TO_POSITION
     robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -219,7 +296,7 @@ public class AutoFunctionLib extends LinearOpMode {
         (robot.frontLeft.isBusy() || robot.frontRight.isBusy() || robot.backLeft.isBusy() || robot.backRight.isBusy()) ) {
 
         // Display it for the driver.
-        telemetry.addData("Motors are running to Positions", "");
+        telemetry.addData("Motors are running to Positions", ticksTarget);
         telemetry.addData("frontLeft progress", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
         telemetry.addData("frontRight progress", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
         telemetry.addData("backLeft progress", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
@@ -266,6 +343,7 @@ public class AutoFunctionLib extends LinearOpMode {
 //   location: class org.firstinspires.ftc.teamcode.AutoFunctionLib
         
         //return (meters / TICKS_PER_METER) * ticks;
+        
         return 0;
     }
     
