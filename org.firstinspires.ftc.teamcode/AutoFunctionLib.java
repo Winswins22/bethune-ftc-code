@@ -117,11 +117,7 @@ public class AutoFunctionLib extends LinearOpMode {
                 
             // do it only once to make it easier to debug
             if (!didOnce){
-                //move(0.0, 1.0, 0.0, 0.1);
-                //move(1.0, 0.0, 0.0, 0.2);
-                //move(0.0, -1.0, 0.0, 0.2);
-                //move(-1.0, 0.0, 0.0, 0.2);
-                //didOnce = true;
+                moveTickFB(500, 100);
             }
             
             telemetry.addData("Something is detected: ", detected);
@@ -260,29 +256,8 @@ public class AutoFunctionLib extends LinearOpMode {
     //positive ticks for forward, negative ticks for backward
     public void moveTickFB(int ticks, int velocityTicks){
     
-        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticks); //FL
+        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() - ticks); //FL
         robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + ticks); //FR
-        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + ticks); //BL
-        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticks); //BR`
-    
-        robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        
-        robot.frontLeft.setVelocity(velocityTicks);
-        robot.frontRight.setVelocity(velocityTicks);
-        robot.backLeft.setVelocity(velocityTicks);
-        robot.backRight.setVelocity(velocityTicks);
-    }
-    
-    //positive ticks for strafe right, negative ticks for strafe left
-    public void moveTickLR(int ticks, int velocityTicks){
-    
-        //TODO: unfinished; need to adjust for motor orientation; this currently assumes that 
-        //the wheels rotate forward when positive, and rotate backward when negative
-        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticks); //FL
-        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() - ticks); //FR
         robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() - ticks); //BL
         robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticks); //BR`
     
@@ -296,7 +271,6 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.backLeft.setVelocity(velocityTicks);
         robot.backRight.setVelocity(velocityTicks);
     }
-    
     
     public static double ticksToMetersFB (int ticks){
         return TICKS_PER_METER_FB * ticks;

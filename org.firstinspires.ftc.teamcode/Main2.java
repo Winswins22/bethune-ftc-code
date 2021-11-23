@@ -20,6 +20,11 @@ public class Main2 extends LinearOpMode {
 
     double speedMultiplier = 1.0;
     double turningMultiplier = 0.7;
+    
+    //SENSITIVITY FORMULA: ROTATION_COEFFICIENT * (JOYSTICK ^ ROTATION_EXPONENT)
+    //Remember that JOYSTICK is always clamped from -1 to 1
+    public static final double ROTATION_EXPONENT = 1.5;
+    public static final double ROTATION_COEFFICIENT = 0.3;
 
     
     @Override
@@ -81,7 +86,13 @@ public class Main2 extends LinearOpMode {
     {
         double wheelSpeeds[] = new double[4];
         
-        rotation = reduceRotation(rotation);
+        int positiveOrNegative = 0;
+        if(rotation < 0)
+            positiveOrNegative = -1;
+        else if(rotation > 0)
+            positiveOrNegative = 1; 
+        
+        rotation = positiveOrNegative * ROTATION_COEFFICIENT * exp(rotation, ROTATION_EXPONENT);
     
         wheelSpeeds[0] = y - rotation;
         wheelSpeeds[1] = y + rotation;
@@ -91,10 +102,10 @@ public class Main2 extends LinearOpMode {
         //normalize(wheelSpeeds);
         reduceSpeeds(wheelSpeeds, speedMultiplier);
     
-        robot.frontLeft.setPower(-wheelSpeeds[0]);
-        robot.frontRight.setPower(wheelSpeeds[1]);
-        robot.backLeft.setPower(-wheelSpeeds[2]);
-        robot.backRight.setPower(wheelSpeeds[3]);
+        robot.frontLeft.setPower(-wheelSpeeds[0]); //FL
+        robot.frontRight.setPower(wheelSpeeds[1]); //FR
+        robot.backLeft.setPower(-wheelSpeeds[2]); //BL
+        robot.backRight.setPower(wheelSpeeds[3]); //BR
         
         
     
@@ -151,8 +162,20 @@ public class Main2 extends LinearOpMode {
         robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     } 
 
-    private double reduceRotation(double rotation){
+    /* private double reduceRotation(double rotation){
         return rotation * turningMultiplier; 
+    } */
+    
+    public static double exp(double n, double e){
+        
+        if(e == 0) return 1;
+        
+        double num = n;
+        for(int i = 0; i < e; i++){
+            num *= num;
+        }
+        return num;
+        
     }
 
 
