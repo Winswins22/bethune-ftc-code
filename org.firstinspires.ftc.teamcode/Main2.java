@@ -26,19 +26,27 @@ public class Main2 extends LinearOpMode {
     public static final double ROTATION_EXPONENT = 1.5;
     public static final double ROTATION_COEFFICIENT = 0.3;
 
+    //ARM TICK BOUNDS 
+    public static final int ARM_MOTOR_UPPER_BOUNDS = 1000;
+    public static final int ARM_MOTOR_LOWER_BOUNDS = -1000;
+    
+    //ARM CLAMPED MAX VELOCITY IN TICKS/S (LINEAR)
+    public static final int ARM_MOTOR_MAX_VELOCITY = 600;
+    
+    //The minimum measured velocity in ticks per second before an idle tick position is set;
+    //this is to prevent the arm from going back to the position controls were released after 
+    //it overshoots that target, since the motor will always coast a little even after controls being released
+    //This might not be necessary due to the weight of the arm.
+    public static final int ARM_SET_IDLE_TICK_DIFF_THRESHOLD = 100;
+    
     
     @Override
     public void runOpMode() {
-        
-
-        
         double left;
         double right;
         double drive;
         double turn;
         double max;
-        
-        
 
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
@@ -48,14 +56,16 @@ public class Main2 extends LinearOpMode {
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Say", "Hello Driver");    //
         telemetry.update();
+        
+        //INITIALIZE THE MOTORS
         resetMotors();
+        runMotorsWithEncodersAndReset(); //DEBUG; COMMENT OUT WHEN NECESSARY
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         
-        runMotorsWithEncoders(); //DEBUG; COMMENT OUT WHEN NECESSARY
-
-        // run until the end of the match (driver presses STOP)
+        //Consumable boolean for arm idle position and the idle position
+        boolean setIdlePosOnce = false; int idlePosL = 0, idlePosR = 0;
         while (opModeIsActive()) {
 
             // Run wheels in POV mode (note: The joystick goes negative when pushed forwards, so negate it)
@@ -65,29 +75,57 @@ public class Main2 extends LinearOpMode {
             turn  = gamepad1.right_stick_x;
             
             //intake
-            if (gamepad1.dpad_down){
+            /*if (gamepad1.dpad_down){
                 intakePower(-1);
             }
             else if (gamepad1.dpad_up){
                 intakePower(1);
             } else {
                 intakePower(0);
-            } 
-            
-            //arm
-            /*
-            if (gamepad1.dpad_right){
-                armPower(1);
-            }
-            else if (gamepad1.dpad_left){
-                armPower(-1);
             } */
             
             
+            robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            //UP
+            if(gamepad1.left_trigger > 0 && !(gamepad1.right_trigger > 0)){ 
+                setIdlePosOnce = false;
+                
+                robot.armMotorL.setTargetPosition(ARM_MOTOR_UPPER_BOUNDS);
+                robot.armMotorL.setVelocity(gamepad1.left_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
+                
+                robot.armMotorR.setTargetPosition(ARM_MOTOR_UPPER_BOUNDS);
+                robot.armMotorR.setVelocity(gamepad1.left_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
+            } 
+            else if(gamepad1.right_trigger > 0 && !(gamepad1.left_trigger > 0)){ //DOWN
+                setIdlePosOnce = false;
+                robot.armMotorL.setTargetPosition(ARM_MOTOR_LOWER_BOUNDS);
+                robot.armMotorL.setVelocity(-gamepad1.right_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
+                
+                robot.armMotorR.setTargetPosition(ARM_MOTOR_LOWER_BOUNDS);
+                robot.armMotorR.setVelocity(-gamepad1.right_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
+                
+            } else { //IDLE AND STAY
+                if(!setIdlePosOnce){
+                    idlePosL = robot.armMotorL.getCurrentPosition();
+                    idlePosR = robot.armMotorR.getCurrentPosition();
+                    setIdlePosOnce = true;
+                }
+                
+                robot.armMotorL.setTargetPosition(idlePosL);
+                robot.armMotorL.setVelocity(ARM_MOTOR_MAX_VELOCITY);    
+                robot.armMotorR.setTargetPosition(idlePosR);
+                robot.armMotorR.setVelocity(ARM_MOTOR_MAX_VELOCITY);
+            }
 
             mecanumDrive_Cartesian(drive, turn);
+            telemetry.update();
             }
         }
+        
+    
+        
+        
     public void mecanumDrive_Cartesian(double y, double rotation)
     {
         double wheelSpeeds[] = new double[4];
@@ -119,11 +157,12 @@ public class Main2 extends LinearOpMode {
         telemetry.addData("front Right", robot.frontRight.getPower());
         telemetry.addData("back Left", robot.backLeft.getPower());
         telemetry.addData("back Right", robot.backRight.getPower());
-        telemetry.addData("speedMultiplier", speedMultiplier);
+        //telemetry.addData("speedMultiplier", speedMultiplier);
+        telemetry.addData("arm motor L position: ", robot.armMotorL.getCurrentPosition());
         telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
         telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
         telemetry.addData("(FL - BR)(Forward/back): ", robot.frontLeft.getCurrentPosition() + robot.backRight.getCurrentPosition());
-        telemetry.update();
+        
     
     }   //end mecanumDrive_Cartesian
 
@@ -133,49 +172,56 @@ public class Main2 extends LinearOpMode {
         }
     }
     
-    public void intakePower(double power) {
+    /* public void intakePower(double power) {
         robot.intakeMotor.setPower(power);
-    }
-    
-    /*
-    public void armPower(double power) {
-        robot.armMotor.setPower(power);
-    }*/
+    } */
 
     private void resetMotors(){
         robot.frontLeft.setPower(0);
         robot.frontRight.setPower(0);
         robot.backLeft.setPower(0);
         robot.backRight.setPower(0);
+        robot.armMotorL.setPower(0);
+        robot.armMotorR.setPower(0);
         
         robot.frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.armMotorL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.armMotorR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         
         // reset target positions
         robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
         robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
         robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
         robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
+        robot.armMotorL.setTargetPosition(robot.armMotorL.getCurrentPosition());
+        robot.armMotorR.setTargetPosition(robot.armMotorR.getCurrentPosition());
     }
 
-    public void runMotorsWithEncoders(){
+    public void runMotorsWithEncodersAndReset(){
         robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.armMotorL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.armMotorR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         
         // reset target positions
         robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
         robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
         robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
         robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
+        robot.armMotorL.setTargetPosition(robot.armMotorL.getCurrentPosition());
+        robot.armMotorR.setTargetPosition(robot.armMotorR.getCurrentPosition());
         
         robot.frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.armMotorL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.armMotorR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     } 
 
     /* private double reduceRotation(double rotation){

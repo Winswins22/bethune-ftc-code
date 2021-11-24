@@ -22,6 +22,8 @@ public class AutoFunctionLib extends LinearOpMode {
     //approximate ticks to traverse length (DRIVE): basically 
     public static final double TICKS_PER_METER_FB = 1313;
     
+    public static final int TICKS_PER_180 = 100;
+    
     HardwarePushbot robot = new HardwarePushbot(); //use this object for easy reference to components like motors.
     
     ElapsedTime elapsedTime = new ElapsedTime();
@@ -260,18 +262,33 @@ public class AutoFunctionLib extends LinearOpMode {
         wheelSpeeds[3] = x + y + rotation; //BR
         
     }*/
-    /*
-    public void rotateOnSpotDEBUG(double degrees, int rotationTickRate){
+    
+    public void rotateOnSpotDEBUG(double degrees, int degreesPerSecond){
         
-        double wheelSpeeds[] = new double[4];
-        int[] ticksToIncreaseBy = {0, 0, 0, 0};
         
-        wheelSpeeds[0] = rotation; //FL
-        wheelSpeeds[1] = rotation; //FR
-        wheelSpeeds[2] = rotation; //BL
-        wheelSpeeds[3] = rotation; //BR
         
-    }*/
+        double ticks = (degrees / 180) * TICKS_PER_180;
+        if(degrees < 0)
+            ticks = -ticks;
+            
+        double velocityTicks = (degreesPerSecond / 180) * TICKS_PER_180;
+        
+        robot.frontLeft.setTargetPosition((int)Math.round( -(robot.frontLeft.getCurrentPosition() - ticks))); 
+        robot.frontRight.setTargetPosition((int)Math.round( robot.frontRight.getCurrentPosition() + ticks)); 
+        robot.backLeft.setTargetPosition((int)Math.round(-(robot.backLeft.getCurrentPosition() - ticks))); 
+        robot.backRight.setTargetPosition((int)Math.round( robot.frontRight.getCurrentPosition() + ticks)); 
+    
+        robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        
+        robot.frontLeft.setVelocity(velocityTicks);
+        robot.frontRight.setVelocity(velocityTicks);
+        robot.backLeft.setVelocity(velocityTicks);
+        robot.backRight.setVelocity(velocityTicks);
+        
+    }
     
     //positive ticks for forward, negative ticks for backward
     public void moveTickFB(int ticks, int velocityTicks){
