@@ -17,10 +17,10 @@ public class AutoFunctionLib extends LinearOpMode {
     
     //Approximate field length: 358.2cm
     //approximate field width: 238.44cm
-    //approximate ticks to traverse width: trial 1: 3866 || trial 2: 3100
+    //approximate ticks to traverse width (DRIVE): basically 3000 every time
     //TODO: Measure using driving mode instead
-    //approximate ticks to traverse length (DRIVE): trial 1: 3856 trial 2: 3449 trial 3:
-    public static final double TICKS_PER_METER_FB = 1624.37;
+    //approximate ticks to traverse length (DRIVE): basically 
+    public static final double TICKS_PER_METER_FB = 1313;
     
     HardwarePushbot robot = new HardwarePushbot(); //use this object for easy reference to components like motors.
     
@@ -117,13 +117,13 @@ public class AutoFunctionLib extends LinearOpMode {
                 
             // do it only once to make it easier to debug
             if (!didOnce){
-                moveTickFB(500, 100);
+                moveTickFB(-1313, 500);
             }
             
             telemetry.addData("Something is detected: ", detected);
             telemetry.addData("frontLeft motor position: ", robot.frontLeft.getCurrentPosition());
             telemetry.addData("backRight motor position: ", robot.backRight.getCurrentPosition());
-            telemetry.addData("(2 * FL - BR)(Forward/back): ", 2 * robot.frontLeft.getCurrentPosition() - robot.backRight.getCurrentPosition());
+            //telemetry.addData("(2 * FL - BR)(Forward/back): ", 2 * robot.frontLeft.getCurrentPosition() - robot.backRight.getCurrentPosition());
             //telemetry.addData("frontLeft target pos", robot.frontLeft.getTargetPosition());
             telemetry.addData("ticksDiff", robot.frontLeft.getCurrentPosition() - initial);
             telemetry.update();
@@ -248,18 +248,38 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.backLeft.setVelocity(velocity);
         robot.backRight.setVelocity(velocity);
     }
-    
+    /*
     public void rotateOnSpot(double degrees, int rotationTickRate){
+
+        double wheelSpeeds[] = new double[4];
+        int[] ticksToIncreaseBy = {0, 0, 0, 0};
+
+        wheelSpeeds[0] = -(x + y - rotation); //FL
+        wheelSpeeds[1] = -x + y + rotation; //FR
+        wheelSpeeds[2] = -(-x + y - rotation); //BL
+        wheelSpeeds[3] = x + y + rotation; //BR
         
-    }
+    }*/
+    /*
+    public void rotateOnSpotDEBUG(double degrees, int rotationTickRate){
+        
+        double wheelSpeeds[] = new double[4];
+        int[] ticksToIncreaseBy = {0, 0, 0, 0};
+        
+        wheelSpeeds[0] = rotation; //FL
+        wheelSpeeds[1] = rotation; //FR
+        wheelSpeeds[2] = rotation; //BL
+        wheelSpeeds[3] = rotation; //BR
+        
+    }*/
     
     //positive ticks for forward, negative ticks for backward
     public void moveTickFB(int ticks, int velocityTicks){
     
-        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() - ticks); //FL
-        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + ticks); //FR
-        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() - ticks); //BL
-        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticks); //BR`
+        robot.frontLeft.setTargetPosition(- ticks); //FL
+        robot.frontRight.setTargetPosition(ticks); //FR
+        robot.backLeft.setTargetPosition(- ticks); //BL
+        robot.backRight.setTargetPosition(ticks); //BR`
     
         robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);

@@ -59,6 +59,10 @@ public class HardwarePushbot
     public DcMotorEx  backLeft     = null;
     public DcMotorEx    backRight    = null;
     
+    public DcMotorEx    intakeMotor    = null;
+    public DcMotorEx    duckMotor    = null;
+    //public DcMotorEx    armMotor    = null;
+    
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
     private ElapsedTime period  = new ElapsedTime();
@@ -79,12 +83,18 @@ public class HardwarePushbot
         backLeft    = hwMap.get(DcMotorEx.class, "backLeft");
         backRight    = hwMap.get(DcMotorEx.class, "backRight");
         
+        intakeMotor    = hwMap.get(DcMotorEx.class, "intakeMotor");
+        duckMotor    = hwMap.get(DcMotorEx.class, "duckMotor");
+        //armMotor    = hwMap.get(DcMotorEx.class, "armMotor");
+        
         // Set to FORWARD or REVERSE depending on motors on robot
         frontLeft.setDirection(DcMotorEx.Direction.REVERSE);
         frontRight.setDirection(DcMotorEx.Direction.REVERSE);
         backLeft.setDirection(DcMotorEx.Direction.REVERSE); 
         backRight.setDirection(DcMotorEx.Direction.REVERSE);
-
+        
+        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        duckMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
     }
  }

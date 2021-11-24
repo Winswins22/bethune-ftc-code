@@ -53,7 +53,7 @@ public class Main2 extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         
-        runMotorsWithEncoders(); //DEBUG; COMMENT OUT WHEN NECESSARy
+        runMotorsWithEncoders(); //DEBUG; COMMENT OUT WHEN NECESSARY
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -64,20 +64,26 @@ public class Main2 extends LinearOpMode {
             drive = gamepad1.left_stick_y;
             turn  = gamepad1.right_stick_x;
             
-            // speed multiplier
+            //intake
             if (gamepad1.dpad_down){
-                // prevent quickly increasing the speed by using runtime
-                if (runtime.seconds() > 0.2){
-                    speedMultiplier = Math.max(0.05, speedMultiplier - 0.05);
-                    runtime.reset();
-                }
+                intakePower(-1);
             }
-            if (gamepad1.dpad_up){
-                if (runtime.seconds() > 0.2){
-                    speedMultiplier = Math.min(1.00, speedMultiplier + 0.05);
-                    runtime.reset();
-                }
+            else if (gamepad1.dpad_up){
+                intakePower(1);
+            } else {
+                intakePower(0);
+            } 
+            
+            //arm
+            /*
+            if (gamepad1.dpad_right){
+                armPower(1);
             }
+            else if (gamepad1.dpad_left){
+                armPower(-1);
+            } */
+            
+            
 
             mecanumDrive_Cartesian(drive, turn);
             }
@@ -116,6 +122,7 @@ public class Main2 extends LinearOpMode {
         telemetry.addData("speedMultiplier", speedMultiplier);
         telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
         telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
+        telemetry.addData("(FL - BR)(Forward/back): ", robot.frontLeft.getCurrentPosition() + robot.backRight.getCurrentPosition());
         telemetry.update();
     
     }   //end mecanumDrive_Cartesian
@@ -125,6 +132,15 @@ public class Main2 extends LinearOpMode {
             wheelSpeeds[i] = wheelSpeeds[i] * multiplier;
         }
     }
+    
+    public void intakePower(double power) {
+        robot.intakeMotor.setPower(power);
+    }
+    
+    /*
+    public void armPower(double power) {
+        robot.armMotor.setPower(power);
+    }*/
 
     private void resetMotors(){
         robot.frontLeft.setPower(0);
