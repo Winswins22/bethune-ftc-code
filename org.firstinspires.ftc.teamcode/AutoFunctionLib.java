@@ -24,6 +24,8 @@ public class AutoFunctionLib extends LinearOpMode {
     // Ticks to strafe across the length:
     // Ticks to strafe across the width:
     public static final double TICKS_PER_METER = 3000;
+    
+    
     public static final int TICKS_ROTATE_90_DEGREES = 1350;
     // meters to move across 1 floor tile 
     public static final double METERS_PER_TILE = 0.6;
@@ -52,6 +54,7 @@ public class AutoFunctionLib extends LinearOpMode {
     private static final String VUFORIA_KEY =
             "AUA6kKH/////AAABmVTR6BBHQkD5nwba+Z0iYfwJZKfxUuzWLm0s+8KxPMAQwzIHlnEe+UXeCejxQgyw+SVfsWbZi+BH+rBEIujq35GyRV73LVm6iyAlK+SzyJDah1dBpZrhepkfHRGkdrsjG2FVA7lKV5fWJel8ysRVlwqwoq5JWr5ZVhLwyYcDT1WhQsWZBkQWcoG9L76A1dWR2RtExUOJbHnICbRaSpvL+yCt1HOg7p3EYkgIDXnwnCDaz6CmcYT9bfRsXWVNTyPyCYt9cqM5foF7odZk/MVe5sLzGwWlnurQwjbvOLSqz0cqHt/MeXH5QiT/4W3G2VrxWXMdT+Y3C8GS6Oeyf5Z0LQJ9kD2x3vI9GoFOGhK7n6I8";
 
+    
     private VuforiaLocalizer vuforia;
 
     private TFObjectDetector tfod;
@@ -143,22 +146,35 @@ public class AutoFunctionLib extends LinearOpMode {
                 // do it only once to make it easier to debug
                 if (!didOnce){
                     
-                    // forwards
-                    moveMeters(0, 1, 0, 0.5, 1.0);
-                    // rotate
-                    move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
-                    // pick up box
-                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
-                    // rotate
-                    move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
-                    // move to right before tile
-                    moveMeters(0, 1, 0, 0.5, 1.0 - METERS_PER_TILE);
-                    // strafe left and right for demo
-                    moveMeters(1, 0, 0, 0.5, METERS_PER_TILE);
-                    moveMeters(-1, 0, 0, 0.5, METERS_PER_TILE);
-                    // strafe diagonally back to start position
-                    moveMeters(1, 1, 0, 0.5, METERS_PER_DIAGONAL_TILE);
+                    // // forwards
+                    // moveMeters(0, 1, 0, 0.5, 1.0);
+                    // // rotate
+                    // move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    // // pick up box
+                    // moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
+                    // // rotate
+                    // move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    // // move to right before tile
+                    // moveMeters(0, 1, 0, 0.5, 1.0 - METERS_PER_TILE);
+                    // // strafe left and right for demo
+                    // moveMeters(1, 0, 0, 0.5, METERS_PER_TILE);
+                    // moveMeters(-1, 0, 0, 0.5, METERS_PER_TILE);
+                    // // strafe diagonally back to start position
+                    // moveMeters(1, 1, 0, 0.5, METERS_PER_DIAGONAL_TILE);
                     
+                    
+                    // moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
+                    // move(0, 0, 1, 0.5, TICKS_ROTATE_90_DEGREES * 2);
+                    // moveMeters(1, 0, 0, 0.5, METERS_PER_TILE * 2);
+                    // moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
+                    // robot.duckWheel.setPower(1);
+                    
+                    // moveMeters(0, 1, 0, 0.5, 0.2);
+                    // move(0, 0, 1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    // moveMeters(-1, 0, 0, 0.5, 0.2);
+                    moveMeters(1, 0, 0, 0.5, METERS_PER_TILE / 5);
+                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
+                    robot.duckWheel.setPower(1);
                     
                     didOnce = true;
                 }

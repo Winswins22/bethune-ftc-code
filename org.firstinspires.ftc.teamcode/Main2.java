@@ -15,9 +15,7 @@ public class Main2 extends LinearOpMode {
     HardwarePushbot robot           = new HardwarePushbot();   // Use a Pushbot's hardware
     double          clawOffset      = 0;                       // Servo mid position
     final double    CLAW_SPEED      = 0.02 ;                   // sets rate to move servo
-    
-    int initial = 0;
-    
+
     @Override
     public void runOpMode() {
         double left;
@@ -34,8 +32,6 @@ public class Main2 extends LinearOpMode {
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Say", "Hello Driver");    //
         telemetry.update();
-        
-        initial = robot.frontLeft.getCurrentPosition();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -51,19 +47,25 @@ public class Main2 extends LinearOpMode {
 
             mecanumDrive_Cartesian(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
             
+            if (gamepad1.right_trigger > 0.0) {
+                robot.duckWheel.setPower(-1); 
+            }
+            else if (gamepad1.left_trigger > 0.0) {
+                robot.duckWheel.setPower(1);
+            }
+            else {
+                robot.duckWheel.setPower(0);
+            }
             
-            robot.duckWheel.setPower(gamepad1.right_trigger);
-            robot.duckWheel.setPower(-(gamepad1.left_trigger));
-            
-            //if (gamepad1.right_bumper) {
-                //robot.intake.setPower(-1); 
-            //}
-            //else if (gamepad1.left_bumper) {
-               // robot.intake.setPower(1);
-            //}
-            //else {
-               // robot.intake.setPower(0);
-            //}
+            if (gamepad1.right_bumper) {
+                robot.intake.setPower(-1); 
+            }
+            else if (gamepad1.left_bumper) {
+                robot.intake.setPower(1);
+            }
+            else {
+                robot.intake.setPower(0);
+            }
             
         }
         }
@@ -83,15 +85,10 @@ public class Main2 extends LinearOpMode {
     robot.backLeft.setPower(-wheelSpeeds[2]);
     robot.backRight.setPower(wheelSpeeds[3]);
     
-    telemetry.addData("Ticks from Initial", robot.frontLeft.getCurrentPosition() - initial);
     telemetry.addData("front Left", robot.frontLeft.getPower());
     telemetry.addData("front Right", robot.frontRight.getPower()); 
     telemetry.addData("back Left", robot.backLeft.getPower()); 
     telemetry.addData("back Right", robot.backRight.getPower()); 
-    telemetry.addData("right Trigger", gamepad1.right_trigger); 
-    telemetry.addData("left Trigger", gamepad1.left_trigger); 
-    telemetry.addData("left_bumper", gamepad1.left_bumper); 
-    telemetry.addData("right_bumper", gamepad1.right_bumper); 
     telemetry.addData("x y r", x + " " + y + " " + rotation);
     telemetry.update();
     
@@ -119,4 +116,4 @@ public class Main2 extends LinearOpMode {
 //         }
 //     }
 // }   //normalize
-}//end classss
+}//end class

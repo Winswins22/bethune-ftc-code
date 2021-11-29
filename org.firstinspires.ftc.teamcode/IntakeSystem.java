@@ -26,16 +26,16 @@ public class IntakeSystem extends LinearOpMode {
             int Dpower = 1;
         
             ticksToIncreaseBy = translatePowerToTicks(Dpower);
-            robot.Intake.setTargetPosition(robot.Intake.getCurrentPosition() + ticksToIncreaseBy);
-            robot.Intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.intake.setTargetPosition(robot.intake.getCurrentPosition() + ticksToIncreaseBy);
+            robot.intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             
-            robot.Intake.setPower(Dpower);
+            robot.intake.setPower(Dpower);
             
-            while (robot.Intake.isBusy()) {
+            while (robot.intake.isBusy()) {
     
                 // Display it for the driver.
                 telemetry.addData("Motors are running to Positions", "");
-                telemetry.addData("Intake progress", robot.Intake.getTargetPosition() - robot.Intake.getCurrentPosition());
+                telemetry.addData("Intake progress", robot.intake.getTargetPosition() - robot.intake.getCurrentPosition());
                 telemetry.update();
             }
         }telemetry.addData("Intake progress", "done");
