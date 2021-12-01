@@ -69,7 +69,7 @@ public class Main2 extends LinearOpMode {
             }
 
             if (gamepad1.a){
-              TimedDUck();
+              TimedDuck();
             }
 
             //AutoDuck();
