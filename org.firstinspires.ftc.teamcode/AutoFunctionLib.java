@@ -145,36 +145,30 @@ public class AutoFunctionLib extends LinearOpMode {
                 
                 // do it only once to make it easier to debug
                 if (!didOnce){
-                    
-                    // // forwards
-                    // moveMeters(0, 1, 0, 0.5, 1.0);
-                    // // rotate
-                    // move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
-                    // // pick up box
-                    // moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
-                    // // rotate
-                    // move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
-                    // // move to right before tile
-                    // moveMeters(0, 1, 0, 0.5, 1.0 - METERS_PER_TILE);
-                    // // strafe left and right for demo
-                    // moveMeters(1, 0, 0, 0.5, METERS_PER_TILE);
-                    // moveMeters(-1, 0, 0, 0.5, METERS_PER_TILE);
-                    // // strafe diagonally back to start position
-                    // moveMeters(1, 1, 0, 0.5, METERS_PER_DIAGONAL_TILE);
-                    
-                    
-                    // moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
-                    // move(0, 0, 1, 0.5, TICKS_ROTATE_90_DEGREES * 2);
-                    // moveMeters(1, 0, 0, 0.5, METERS_PER_TILE * 2);
-                    // moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
-                    // robot.duckWheel.setPower(1);
-                    
-                    // moveMeters(0, 1, 0, 0.5, 0.2);
-                    // move(0, 0, 1, 0.5, TICKS_ROTATE_90_DEGREES);
-                    // moveMeters(-1, 0, 0, 0.5, 0.2);
+
+                    // move to carosel
                     moveMeters(1, 0, 0, 0.5, METERS_PER_TILE / 5);
-                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
+                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE / 2);
+                    moveMeters(0, 1, 0, 0.2, METERS_PER_TILE / 2);
+
+                    // duck wheel code here
                     robot.duckWheel.setPower(1);
+
+                    // move to the shipping hub
+                    move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE / 2);
+                    move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE * 2);
+
+                    // insert arm code here
+
+                    // move to the warehouse
+                    move(0, 0, -1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    moveMeters(0, 1, 0, 0.5, METERS_PER_TILE);
+                    move(0, 0, 1, 0.5, TICKS_ROTATE_90_DEGREES);
+                    moveMeters(1, 0, 0, 0.5, METERS_PER_TILE);
+                    moveMeters(0, 1, 0, 1, METERS_PER_TILE * 4);
+
                     
                     didOnce = true;
                 }
@@ -241,7 +235,7 @@ public class AutoFunctionLib extends LinearOpMode {
      *   Move forwards at max speed:
      *     move(0, 1, 0, 1.0, INSERT_TICKS_HERE);
      *   Strafe right:
-     *     move(1, 0, 1, 1.0, INSERT_TICKS_HERE);
+     *     move(1, 0, 0, 1.0, INSERT_TICKS_HERE);
      *   Rotate 90 degrees clockwise:
      *     move(0, 0, -1, 1.0, TICKS_ROTATE_90_DEGREES);
      * 
