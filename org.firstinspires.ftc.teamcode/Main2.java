@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Pushbot: Mecanum wheels", group = "mode")
 
@@ -14,6 +15,8 @@ public class Main2 extends LinearOpMode {
     HardwarePushbot robot = new HardwarePushbot(); // Use a Pushbot's hardware
     double clawOffset = 0; // Servo mid position
     final double CLAW_SPEED = 0.02; // sets rate to move servo
+
+    private ElapsedTime duckTime = new ElapsedTime();
 
     @Override
     public void runOpMode() {
@@ -49,23 +52,27 @@ public class Main2 extends LinearOpMode {
 
             mecanumDrive_Cartesian(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
 
-            // if (gamepad1.right_trigger > 0.0) {
-            // robot.duckWheel.setPower(-1);
-            // } else if (gamepad1.left_trigger > 0.0) {
-            // robot.duckWheel.setPower(1);
-            // } else {
-            // robot.duckWheel.setPower(0);
-            // }
+            if (gamepad1.right_trigger > 0.0) {
+              robot.duckWheel.setPower(-1);
+            } else if (gamepad1.left_trigger > 0.0) {
+              robot.duckWheel.setPower(1);
+            } else {
+              robot.duckWheel.setPower(0);
+            }
 
-            // if (gamepad1.right_bumper) {
-            // robot.intake.setPower(-1);
-            // } else if (gamepad1.left_bumper) {
-            // robot.intake.setPower(1);
-            // } else {
-            // robot.intake.setPower(0);
-            // }
+            if (gamepad1.right_bumper) {
+              robot.intake.setPower(-1);
+            } else if (gamepad1.left_bumper) {
+              robot.intake.setPower(1);
+            } else {
+              robot.intake.setPower(0);
+            }
 
-            AutoDuck();
+            if (gamepad1.a){
+              TimedDUck();
+            }
+
+            //AutoDuck();
             AutoIntake();
 
         }
@@ -94,6 +101,17 @@ public class Main2 extends LinearOpMode {
         telemetry.update();
 
     } // end mecanumDrive_Cartesian
+
+    public void TimedDuck(){
+
+      if (duckTime.seconds < 1.0){
+        robot.duckWheel.setPower(0.5);
+      }
+      else if (duckTime.seconds < 2.0){
+        robot.duckWheel.setPower(1.0);
+      }
+
+    }
 
     public void AutoDuck() {
         int ticksToIncreaseBy;
@@ -201,3 +219,5 @@ public class Main2 extends LinearOpMode {
     // }
     // } //normalize
 }// end class
+
+
