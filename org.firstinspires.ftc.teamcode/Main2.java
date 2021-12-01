@@ -104,10 +104,10 @@ public class Main2 extends LinearOpMode {
 
     public void TimedDuck(){
 
-      if (duckTime.seconds < 1.0){
+      if (duckTime.seconds() < 1.0){
         robot.duckWheel.setPower(0.5);
       }
-      else if (duckTime.seconds < 2.0){
+      else if (duckTime.seconds() < 2.0){
         robot.duckWheel.setPower(1.0);
       }
 
