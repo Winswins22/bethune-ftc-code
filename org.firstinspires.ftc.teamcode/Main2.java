@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -23,12 +24,12 @@ public class Main2 extends LinearOpMode {
     
     //SENSITIVITY FORMULA: ROTATION_COEFFICIENT * (JOYSTICK ^ ROTATION_EXPONENT)
     //Remember that JOYSTICK is always clamped from -1 to 1
-    public static final double ROTATION_EXPONENT = 1.5;
+    public static final double ROTATION_EXPONENT = 1;
     public static final double ROTATION_COEFFICIENT = 0.3;
 
     //ARM TICK BOUNDS 
-    public static final int ARM_MOTOR_UPPER_BOUNDS = 1000;
-    public static final int ARM_MOTOR_LOWER_BOUNDS = -1000;
+    public static final int ARM_MOTOR_UPPER_BOUNDS = -100000000;
+    public static final int ARM_MOTOR_LOWER_BOUNDS = 100000000;
     
     //ARM CLAMPED MAX VELOCITY IN TICKS/S (LINEAR)
     public static final int ARM_MOTOR_MAX_VELOCITY = 600;
@@ -37,11 +38,20 @@ public class Main2 extends LinearOpMode {
     //this is to prevent the arm from going back to the position controls were released after 
     //it overshoots that target, since the motor will always coast a little even after controls being released
     //This might not be necessary due to the weight of the arm.
-    public static final int ARM_SET_IDLE_TICK_DIFF_THRESHOLD = 100;
+    public static final double ARM_SET_IDLE_DELAY_SECONDS = 0.2;
     
+    class GamepadCustom extends Gamepad{
+        public GamepadCustom(){
+            joystickDeadzone = 0f;
+        } 
+    }
     
     @Override
     public void runOpMode() {
+        
+        GamepadCustom gamepad = new GamepadCustom();
+        gamepad1 = gamepad;
+        
         double left;
         double right;
         double drive;
@@ -64,8 +74,11 @@ public class Main2 extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         
-        //Consumable boolean for arm idle position and the idle position
-        boolean setIdlePosOnce = false; int idlePosL = 0, idlePosR = 0;
+        //boolean flag for arm idle position and the idle position
+        boolean setIdlePosOnce = false;
+        boolean recordedArmControlReleaseTime = false;
+        int idlePosL = 0, idlePosR = 0;
+        double armReleasedTime = 0;
         while (opModeIsActive()) {
 
             // Run wheels in POV mode (note: The joystick goes negative when pushed forwards, so negate it)
@@ -75,14 +88,20 @@ public class Main2 extends LinearOpMode {
             turn  = gamepad1.right_stick_x;
             
             //intake
-            /*if (gamepad1.dpad_down){
+            
+            if (gamepad1.left_bumper || gamepad1.dpad_up){
                 intakePower(-1);
             }
-            else if (gamepad1.dpad_up){
+            else if (gamepad1.right_bumper || gamepad1.dpad_down){
                 intakePower(1);
             } else {
                 intakePower(0);
-            } */
+            } 
+            
+            if(gamepad1.x){
+                robot.duckMotor.setPower(1);
+            } else 
+                robot.duckMotor.setPower(0);
             
             
             robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -90,6 +109,7 @@ public class Main2 extends LinearOpMode {
             //UP
             if(gamepad1.left_trigger > 0 && !(gamepad1.right_trigger > 0)){ 
                 setIdlePosOnce = false;
+                recordedArmControlReleaseTime = false;
                 
                 robot.armMotorL.setTargetPosition(ARM_MOTOR_UPPER_BOUNDS);
                 robot.armMotorL.setVelocity(gamepad1.left_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
@@ -99,6 +119,8 @@ public class Main2 extends LinearOpMode {
             } 
             else if(gamepad1.right_trigger > 0 && !(gamepad1.left_trigger > 0)){ //DOWN
                 setIdlePosOnce = false;
+                recordedArmControlReleaseTime = false;
+                
                 robot.armMotorL.setTargetPosition(ARM_MOTOR_LOWER_BOUNDS);
                 robot.armMotorL.setVelocity(-gamepad1.right_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
                 
@@ -106,7 +128,13 @@ public class Main2 extends LinearOpMode {
                 robot.armMotorR.setVelocity(-gamepad1.right_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
                 
             } else { //IDLE AND STAY
-                if(!setIdlePosOnce){
+            
+                if(!recordedArmControlReleaseTime){
+                    armReleasedTime = runtime.seconds();
+                    recordedArmControlReleaseTime = true;
+                }
+            
+                if(!setIdlePosOnce && ((runtime.seconds() - armReleasedTime) > ARM_SET_IDLE_DELAY_SECONDS)){
                     idlePosL = robot.armMotorL.getCurrentPosition();
                     idlePosR = robot.armMotorR.getCurrentPosition();
                     setIdlePosOnce = true;
@@ -118,7 +146,7 @@ public class Main2 extends LinearOpMode {
                 robot.armMotorR.setVelocity(ARM_MOTOR_MAX_VELOCITY);
             }
 
-            mecanumDrive_Cartesian(drive, turn);
+            drive(drive, turn);
             telemetry.update();
             }
         }
@@ -126,7 +154,7 @@ public class Main2 extends LinearOpMode {
     
         
         
-    public void mecanumDrive_Cartesian(double y, double rotation)
+    public void drive(double y, double rotation)
     {
         double wheelSpeeds[] = new double[4];
         
@@ -164,7 +192,7 @@ public class Main2 extends LinearOpMode {
         telemetry.addData("(FL - BR)(Forward/back): ", robot.frontLeft.getCurrentPosition() + robot.backRight.getCurrentPosition());
         
     
-    }   //end mecanumDrive_Cartesian
+    }   //end drive
 
     private void reduceSpeeds(double[] wheelSpeeds, double multiplier){
         for (int i = 0; i < wheelSpeeds.length; i ++){
@@ -172,9 +200,9 @@ public class Main2 extends LinearOpMode {
         }
     }
     
-    /* public void intakePower(double power) {
+    public void intakePower(double power) {
         robot.intakeMotor.setPower(power);
-    } */
+    } 
 
     private void resetMotors(){
         robot.frontLeft.setPower(0);

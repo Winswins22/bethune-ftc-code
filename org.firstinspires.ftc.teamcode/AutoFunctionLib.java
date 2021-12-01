@@ -22,7 +22,10 @@ public class AutoFunctionLib extends LinearOpMode {
     //approximate ticks to traverse length (DRIVE): basically 
     public static final double TICKS_PER_METER_FB = 1313;
     
-    public static final int TICKS_PER_180 = 100;
+    //at least this many wheels have to be idle for the wheelsAreBusy() to be true.
+    public static final int WHEELS_IDLE_MIN_COUNT = 4;
+    
+    public static final int TICKS_PER_180 = 940;
     
     HardwarePushbot robot = new HardwarePushbot(); //use this object for easy reference to components like motors.
     
@@ -66,68 +69,103 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.init(hardwareMap);
         
         initial = robot.frontLeft.getCurrentPosition();
-        
-        initVuforia();
-        initTfod();
-        
-        tfod.activate();
-
-        // The TensorFlow software will scale the input images from the camera to a lower resolution.
-        // This can result in lower detection accuracy at longer distances (> 55cm or 22").
-        // If your target is at distance greater than 50 cm (20") you can adjust the magnification value
-        // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
-        // should be set to the value of the images used to create the TensorFlow Object Detection model
-        // (typically 16/9).
-        tfod.setZoom(2.5, 16.0/9.0);
 
         telemetry.addData("Robot", "Initialized");
         telemetry.update();
  
         waitForStart();
         
-        initMotors();
+        initWheelMotors();
         
-        boolean didOnce = false; 
+        boolean flag1 = false, flag2 = false, flag3 = false, flag4 = false, flag5 = false, flag6 = false;
+        boolean flag7 = false, flag8 = false, flag9 = false, flag10 = false, flag11 = false, flag12 = false;
+        boolean flag13 = false, flag14 = false, flag15 = false, flag16 = false, flag17 = false, flag18 = false;
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             
-            boolean detected = false;
-
-            if (tfod != null) {
+            telemetry.addData("WheelsAreBusy: ", wheelsAreBusy());
+            telemetry.addData("WheelsBusy: ", DEBUGBusy());
                 
-                // getUpdatedRecognitions() will return null if no new information is available since
-                // the last time that call was made.
-                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-                if (updatedRecognitions != null) {
-                    detected = true;
-                  telemetry.addData("# Object Detected", updatedRecognitions.size());
-                  // step through the list of recognitions and display boundary info.
-                  int i = 0;
-                  for (Recognition recognition : updatedRecognitions) {
-                    telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                    telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                            recognition.getLeft(), recognition.getTop());
-                    telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                            recognition.getRight(), recognition.getBottom());
-                    i++;
-                  }
-                } else {
-                    detected = false;
+            //1: Raise arm to prevent dragging, reverse into duck wheel, and spin duck whee, then stop duck wheel
+            if (!flag1){
+                setArmPosition(-50, 600); //move arm up
+                moveTickFB(500, 200); //reverse into duck wheel 
+                duckMotor(1); //spin duck wheel
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", 1);
+                    telemetry.update();
                 }
+                sleep(3500); //wait 3 seconds
+                duckMotor(0); //shut off duck wheel
+                flag1 = true;
             }
-                //move(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
-                
-            // do it only once to make it easier to debug
-            if (!didOnce){
-                moveTickFB(-1313, 500);
-            }
+            initWheelMotors();
             
-            telemetry.addData("Something is detected: ", detected);
+            //2: drive forwards and prepare to turn to storage tower
+            if(!flag2 && !wheelsAreBusy()){
+                moveTickFB(-1000, 300);
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", 2);
+                    telemetry.update();
+                }
+                flag2 = true;
+            }
+            initWheelMotors();
+            
+            //3: rotate 90 degrees left to face storage tower
+            if (!flag3 && !wheelsAreBusy()){
+                rotateOnSpot(90, 100);
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", 3);
+                    telemetry.update();
+                }
+                flag3 = true;
+            } 
+            initWheelMotors();
+            
+            //4: drive towards tower
+            if (!flag4 && !wheelsAreBusy()){
+                moveTickFB(500, 200);
+                telemetry.addData("Stage: ", 4);
+                telemetry.update();
+                flag4 = true;
+            } 
+            
+            //5: set arms to right position
+            if (!flag5 && !wheelsAreBusy()){
+                setArmPosition(50, 100);
+                telemetry.addData("Stage: ", 5);
+                telemetry.update();
+                flag5 = true;
+            } 
+            
+            //6: eject item
+            if (!flag6 && !wheelsAreBusy()){
+                intakeMotor(-1);
+                telemetry.addData("Stage: ", 6);
+                telemetry.update();
+                flag6 = true;
+            } 
+            
+            //7: turn 90 degrees left towards warehouse
+            if (!flag7 && !wheelsAreBusy()){
+                rotateOnSpot(90, 100);
+                telemetry.addData("Stage: ", 7);
+                telemetry.update();
+                flag7 = true;
+            } 
+            
+            //8: drive towards warehouse
+            if (!flag8 && !wheelsAreBusy()){
+                moveTickFB(600, 300);
+                telemetry.addData("Stage: ", 8);
+                telemetry.update();
+                flag8 = true;
+            } 
+            
+            telemetry.addData("Stage: ", "Finished");
             telemetry.addData("frontLeft motor position: ", robot.frontLeft.getCurrentPosition());
             telemetry.addData("backRight motor position: ", robot.backRight.getCurrentPosition());
-            //telemetry.addData("(2 * FL - BR)(Forward/back): ", 2 * robot.frontLeft.getCurrentPosition() - robot.backRight.getCurrentPosition());
-            //telemetry.addData("frontLeft target pos", robot.frontLeft.getTargetPosition());
-            telemetry.addData("ticksDiff", robot.frontLeft.getCurrentPosition() - initial);
             telemetry.update();
             
         }
@@ -136,7 +174,7 @@ public class AutoFunctionLib extends LinearOpMode {
     /**
      * resets motor tick positions and target positions
      */
-    public void initMotors(){
+    public void initWheelMotors(){
         robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -165,107 +203,7 @@ public class AutoFunctionLib extends LinearOpMode {
         return ticksToIncreaseBy;
     }
     
-    /**
-     * Avoid using this in the autonomous mode since we want the bot to track its position
-     * in the field
-     */
-    public void move(double x, double y, double rotation, double power){
-        double wheelSpeeds[] = new double[4];
-        int[] ticksToIncreaseBy = {0, 0, 0, 0};
-        // negate x and y to reverse travel directions so that it travels properly
-        x = -x;
-        y = -y;
-
-        wheelSpeeds[0] = -(x + y - rotation); //FL
-        wheelSpeeds[1] = -x + y + rotation; //FR
-        wheelSpeeds[2] = -(-x + y - rotation); //BL
-        wheelSpeeds[3] = x + y + rotation; //BR
-    
-        ticksToIncreaseBy = translatePowerToTicks(wheelSpeeds);
-    
-        //setAllVelocity(velocity);
-    
-        // telemetry.addData("frontLeft instructions", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
-        // telemetry.addData("frontRight instructions", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
-        // telemetry.addData("backLeft instructions", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
-        // telemetry.addData("backRight instructions", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
-    
-        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition() + ticksToIncreaseBy[0]);
-        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition() + ticksToIncreaseBy[1]);
-        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition() + ticksToIncreaseBy[2]);
-        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition() + ticksToIncreaseBy[3]);
-    
-        // Turn On RUN_TO_POSITION
-        robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    
-        // Start motion;
-        robot.frontLeft.setPower(power);
-        robot.frontRight.setPower(power);
-        robot.backLeft.setPower(power);
-        robot.backRight.setPower(power);
-    
-        while (opModeIsActive() && 
-            (robot.frontLeft.isBusy() || robot.frontRight.isBusy() || robot.backLeft.isBusy() || robot.backRight.isBusy()) ) {
-
-                // Display it for the driver.
-            telemetry.addData("Motors are running to Positions", "");
-            telemetry.addData("frontLeft progress", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
-            telemetry.addData("frontRight progress", robot.frontRight.getTargetPosition() - robot.frontRight.getCurrentPosition());
-            telemetry.addData("backLeft progress", robot.backLeft.getTargetPosition() - robot.backLeft.getCurrentPosition());
-            telemetry.addData("backRight progress", robot.backRight.getTargetPosition() - robot.backRight.getCurrentPosition());
-            telemetry.addData("ticksDiff from start pos", robot.frontLeft.getCurrentPosition() - initial);
-            telemetry.update();
-        }
-    
-        // Stop all motion;
-        robot.frontLeft.setPower(0);
-        robot.frontRight.setPower(0);
-        robot.backLeft.setPower(0);
-        robot.backRight.setPower(0);
-        
-        initMotors();
-    
-        // TODO add encoder stuffs
-        
-        //normalize(wheelSpeeds);
-    
-        // robot.frontLeft.setPower(-wheelSpeeds[0]);
-        // robot.frontRight.setPower(wheelSpeeds[1]);
-        // robot.backLeft.setPower(-wheelSpeeds[2]);
-        // robot.backRight.setPower(wheelSpeeds[3]);
-        
-        // telemetry.addData("front Left", robot.frontLeft.getPower());
-        // telemetry.addData("front Right", robot.frontRight.getPower()); 
-        // telemetry.addData("back Left", robot.backLeft.getPower()); 
-        // telemetry.addData("back Right", robot.backRight.getPower()); 
-        // telemetry.update();
-    }
-    
-    public void setAllVelocity(double velocity){
-        robot.frontLeft.setVelocity(velocity);
-        robot.frontRight.setVelocity(velocity);
-        robot.backLeft.setVelocity(velocity);
-        robot.backRight.setVelocity(velocity);
-    }
-    /*
-    public void rotateOnSpot(double degrees, int rotationTickRate){
-
-        double wheelSpeeds[] = new double[4];
-        int[] ticksToIncreaseBy = {0, 0, 0, 0};
-
-        wheelSpeeds[0] = -(x + y - rotation); //FL
-        wheelSpeeds[1] = -x + y + rotation; //FR
-        wheelSpeeds[2] = -(-x + y - rotation); //BL
-        wheelSpeeds[3] = x + y + rotation; //BR
-        
-    }*/
-    
-    public void rotateOnSpotDEBUG(double degrees, int degreesPerSecond){
-        
-        
+    public void rotateOnSpot(double degrees, int degreesPerSecond){
         
         double ticks = (degrees / 180) * TICKS_PER_180;
         if(degrees < 0)
@@ -273,9 +211,9 @@ public class AutoFunctionLib extends LinearOpMode {
             
         double velocityTicks = (degreesPerSecond / 180) * TICKS_PER_180;
         
-        robot.frontLeft.setTargetPosition((int)Math.round( -(robot.frontLeft.getCurrentPosition() - ticks))); 
+        robot.frontLeft.setTargetPosition((int)Math.round( robot.frontLeft.getCurrentPosition() + ticks)); 
         robot.frontRight.setTargetPosition((int)Math.round( robot.frontRight.getCurrentPosition() + ticks)); 
-        robot.backLeft.setTargetPosition((int)Math.round(-(robot.backLeft.getCurrentPosition() - ticks))); 
+        robot.backLeft.setTargetPosition((int)Math.round(robot.backLeft.getCurrentPosition() + ticks)); 
         robot.backRight.setTargetPosition((int)Math.round( robot.frontRight.getCurrentPosition() + ticks)); 
     
         robot.frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -315,6 +253,45 @@ public class AutoFunctionLib extends LinearOpMode {
     
     public static int metersToTicksFB (double meters){
         return (int)(meters * TICKS_PER_METER_FB);
+    }
+    
+    public void intakeMotor(int power){
+        robot.intakeMotor.setPower(power);
+    }
+    
+    public void duckMotor(int power){
+        robot.duckMotor.setPower(power);
+    }
+    
+    public boolean wheelsAreBusy(){
+        boolean busy = false;
+        if(robot.frontLeft.isBusy()) busy = true;
+        if(robot.frontRight.isBusy()) busy = true;
+        if(robot.backLeft.isBusy()) busy = true;
+        if(robot.backRight.isBusy()) busy = true;
+        
+        return busy;
+        
+    }
+    
+    public int DEBUGBusy(){
+        int busy = 0;
+        if(robot.frontLeft.isBusy()) busy++;
+        if(robot.frontRight.isBusy()) busy++;
+        if(robot.backLeft.isBusy()) busy++;
+        if(robot.backRight.isBusy()) busy++;
+        return busy;
+    }
+    
+    public void setArmPosition(int position, int ticksVelocity){
+        robot.armMotorL.setTargetPosition(position);
+        robot.armMotorR.setTargetPosition(position);
+        
+        robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        
+        robot.armMotorL.setVelocity(ticksVelocity);
+        robot.armMotorR.setVelocity(ticksVelocity);
     }
     
     private void initVuforia() {

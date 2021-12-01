@@ -59,8 +59,8 @@ public class HardwarePushbot
     public DcMotorEx  backLeft     = null;
     public DcMotorEx    backRight    = null;
     
-    //public DcMotorEx    intakeMotor    = null;
-    //public DcMotorEx    duckMotor    = null;
+    public DcMotorEx    intakeMotor    = null;
+    public DcMotorEx    duckMotor    = null;
     public DcMotorEx    armMotorL    = null;
     public DcMotorEx    armMotorR    = null;
     
@@ -84,8 +84,8 @@ public class HardwarePushbot
         backLeft    = hwMap.get(DcMotorEx.class, "backLeft");
         backRight    = hwMap.get(DcMotorEx.class, "backRight");
         
-        //intakeMotor    = hwMap.get(DcMotorEx.class, "intakeMotor");
-        //duckMotor    = hwMap.get(DcMotorEx.class, "duckMotor");
+        intakeMotor    = hwMap.get(DcMotorEx.class, "intakeMotor");
+        duckMotor    = hwMap.get(DcMotorEx.class, "duckMotor");
         armMotorL    = hwMap.get(DcMotorEx.class, "armMotorL");
         armMotorR    = hwMap.get(DcMotorEx.class, "armMotorR");
         
@@ -95,8 +95,8 @@ public class HardwarePushbot
         backLeft.setDirection(DcMotorEx.Direction.REVERSE); 
         backRight.setDirection(DcMotorEx.Direction.REVERSE);
         
-        //intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        //duckMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        duckMotor.setDirection(DcMotorEx.Direction.REVERSE);
         armMotorL.setDirection(DcMotorEx.Direction.REVERSE);
         armMotorR.setDirection(DcMotorEx.Direction.FORWARD);
 
