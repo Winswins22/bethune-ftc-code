@@ -16,7 +16,12 @@ public class Main2 extends LinearOpMode {
     double clawOffset = 0; // Servo mid position
     final double CLAW_SPEED = 0.02; // sets rate to move servo
 
-    private ElapsedTime duckTime = new ElapsedTime();
+    final double SPEED_MULTIPLIER = 0.9;
+
+    boolean runArm = false;
+    
+    private ElapsedTime duckTimer = new ElapsedTime();
+    private ElapsedTime armTimer = new ElapsedTime();
 
     @Override
     public void runOpMode() {
@@ -52,13 +57,8 @@ public class Main2 extends LinearOpMode {
 
             mecanumDrive_Cartesian(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
 
-            if (gamepad1.right_trigger > 0.0) {
-              robot.duckWheel.setPower(-1);
-            } else if (gamepad1.left_trigger > 0.0) {
-              robot.duckWheel.setPower(1);
-            } else {
-              robot.duckWheel.setPower(0);
-            }
+            robot.duckWheel.setPower(gamepad1.left_trigger);
+            robot.intake.setPower(gamepad1.right_trigger);
 
             if (gamepad1.right_bumper) {
               robot.intake.setPower(-1);
@@ -68,12 +68,19 @@ public class Main2 extends LinearOpMode {
               robot.intake.setPower(0);
             }
 
-            if (gamepad1.a){
-              TimedDuck();
+            if (gamepad1.b) {
+              armTimer.reset();
+              runArm = true;
             }
-
-            //AutoDuck();
-            AutoIntake();
+      
+            if (runArm) {
+              if (autoArm()) {
+                armTimer.reset();
+                runArm = false;
+              }
+            }
+      
+            //robot.intake.setPower(0.5);
 
         }
     }
@@ -85,6 +92,10 @@ public class Main2 extends LinearOpMode {
         wheelSpeeds[1] = -x + y + rotation;
         wheelSpeeds[2] = -x + y - rotation;
         wheelSpeeds[3] = x + y + rotation;
+
+        for (int i = 0; i < wheelSpeeds.length; i ++){
+          wheelSpeeds[i] = wheelSpeeds[i] * SPEED_MULTIPLIER;
+        }
 
         // normalize(wheelSpeeds);
 
@@ -102,57 +113,23 @@ public class Main2 extends LinearOpMode {
 
     } // end mecanumDrive_Cartesian
 
-    public void TimedDuck(){
-
-      if (duckTime.seconds() < 1.0){
-        robot.duckWheel.setPower(0.5);
+    public boolean autoArm() {
+      if (armTimer.seconds() <= 1.0) {
+        robot.hand.setPosition(0.45);
+      } else if (armTimer.seconds() <= 2.0) {
+        robot.arm.setPower(0.85);
+      } else if (armTimer.seconds() <= 3.0) {
+        robot.arm.setPower(0);
+        robot.hand.setPosition(0.15);
+      } else if (armTimer.seconds() <= 4.0) {
+        robot.arm.setPower(-0.60);
+        robot.hand.setPosition(0.97);
+      } else if (armTimer.seconds() <= 4.5) {
+        robot.arm.setPower(0);
+      } else {
+        return true;
       }
-      else if (duckTime.seconds() < 2.0){
-        robot.duckWheel.setPower(1.0);
-      }
-
-    }
-
-    public void AutoDuck() {
-        int ticksToIncreaseBy;
-        if (gamepad1.a) {
-            // Slow for 50000tick
-            double Dpower = 0.5;
-
-            ticksToIncreaseBy = translatePowerToTicks(Dpower);
-            robot.duckWheel.setTargetPosition(robot.duckWheel.getCurrentPosition() + ticksToIncreaseBy);
-            robot.duckWheel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            robot.duckWheel.setPower(Dpower);
-
-            while (robot.duckWheel.isBusy()) {
-
-                // Display it for the driver.
-                telemetry.addData("Motors are running to Positions", "");
-                telemetry.addData("duckWheel progress",
-                        robot.duckWheel.getTargetPosition() - robot.duckWheel.getCurrentPosition());
-                telemetry.update();
-            }
-
-            // Fast for 100000tick
-            int Ipower = 1;
-
-            ticksToIncreaseBy = translatePowerToTicks(Ipower);
-            robot.duckWheel.setTargetPosition(robot.duckWheel.getCurrentPosition() + ticksToIncreaseBy);
-            robot.duckWheel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            robot.duckWheel.setPower(Ipower);
-
-            while (robot.duckWheel.isBusy()) {
-
-                // Display it for the driver.
-                telemetry.addData("Motors are running to Positions", "");
-                telemetry.addData("duckWheel progress",
-                        robot.duckWheel.getTargetPosition() - robot.duckWheel.getCurrentPosition());
-                telemetry.update();
-            }
-        }
-        telemetry.addData("duckWheel progress", "done");
+      return false;
     }
 
     public void AutoIntake() {

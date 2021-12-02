@@ -60,6 +60,8 @@ public class HardwarePushbot
     public DcMotorEx  backRight  = null;
     public DcMotor  duckWheel    = null;
     public DcMotor intake        = null;
+    public DcMotor arm           = null;
+    public Servo hand            = null;
     
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -83,6 +85,8 @@ public class HardwarePushbot
         duckWheel = hwMap.get(DcMotor.class, "Duck");
         intake = hwMap.get(DcMotor.class, "Intake");
         //intake = hwMap.StringIndexOutOfBoundsException(DcMotor.class, "intake");
+        arm = hwMap.get(DcMotor.class, "ArmMotor");
+        hand = hwMap.get(Servo.class, "HandServo");
         
         // Set to FORWARD or REVERSE depending on motors on robot
         frontRight.setDirection(DcMotor.Direction.REVERSE); 
@@ -91,6 +95,11 @@ public class HardwarePushbot
         backLeft.setDirection(DcMotor.Direction.FORWARD);
         duckWheel.setDirection(DcMotor.Direction.REVERSE);
         intake.setDirection(DcMotor.Direction.FORWARD);
+        arm.setDirection(DcMotor.Direction.FORWARD);
+
+        hand.setPosition(1);
     }
  }
+
+ 
 
