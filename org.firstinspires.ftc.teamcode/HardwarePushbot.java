@@ -89,7 +89,7 @@ public class HardwarePushbot
         hand = hwMap.get(Servo.class, "HandServo");
         
         // Set to FORWARD or REVERSE depending on motors on robot
-        frontRight.setDirection(DcMotor.Direction.REVERSE); 
+        frontRight.setDirection(DcMotor.Direction.FORWARD); 
         backRight.setDirection(DcMotor.Direction.FORWARD);
         frontLeft.setDirection(DcMotor.Direction.REVERSE); 
         backLeft.setDirection(DcMotor.Direction.FORWARD);
@@ -100,6 +100,4 @@ public class HardwarePushbot
         hand.setPosition(1);
     }
  }
-
- 
 

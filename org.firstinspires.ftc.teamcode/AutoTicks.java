@@ -50,7 +50,7 @@
       public static final double TICKS_PER_METER = 1500;
       
       
-      public static final int TICKS_ROTATE_90_DEGREES = 675;
+      public static final int TICKS_ROTATE_90_DEGREES = 625;
       // meters to move across 1 floor tile 
       public static final double METERS_PER_TILE = 0.6;
       // meters to move diagonally across 1 floor tile. Calculated by experimentation
@@ -62,7 +62,8 @@
       private ElapsedTime duckTimer = new ElapsedTime();
       private ElapsedTime armTimer = new ElapsedTime();
       
-      boolean duck = true;
+      private boolean duck = true;
+      private double defaultPosition = 0.95;
   
       /* Declare OpMode members. */
       HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -84,24 +85,25 @@
   
           // Wait for the game to start (driver presses PLAY)
           waitForStart();
+          robot.hand.setPosition(defaultPosition+0.5);
           
           
           while (opModeIsActive()){
-              
               if (!didOnce){
                   didOnce = true;
+                  
+                  //moveMeters(0, 1, 0, 0.05, METERS_PER_TILE * 5);
+                  
                   // move to carosel
                   moveMeters(1, 0, 0, 0.2, METERS_PER_TILE / 2);
-                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES / 6);
+                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES / 4);
                   
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE);
                   moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 4);
       
                   // duck wheel code here
                   if (duck){
-                      rotateDuckWheel(0.5, -2000);
-                      //moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 10);
-                      rotateDuckWheel(1.0, -3000);
+                      rotateDuckWheel(1, -6000);
                       duck = false;
                   }
                   
@@ -112,18 +114,24 @@
                   
                   // // move to the shipping hub
                   move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
-                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 2, false);
-                  move(0, 0, 1, 0.2, (int)(TICKS_ROTATE_90_DEGREES), false);
-                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 1.75);
+                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 0.8);
+                  move(0, 0, 1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
+                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 1.65);
                   
-                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
-                  move(0, 1, 0, 0.2, TICKS_ROTATE_90_DEGREES / 4);
+                  move(0, 0, 1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
+                  moveMeters(0, 1, 0, 0.2, (int)(METERS_PER_TILE / 5));
                   // insert arm code here
+                  
                   armTimer.reset();
-                  autoArm();
+                  while (true) {
+                      if (autoArm()) {
+                          armTimer.reset();
+                          break;
+                      }
+                  }
                   // end arm code
-                  move(0, -1, 0, 0.2, TICKS_ROTATE_90_DEGREES / 4);
-                  move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
+                  moveMeters(0, -1, 0, 0.2, (int)(METERS_PER_TILE / 5));
+                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
       
                   // // move to the warehouse
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 2);
@@ -137,7 +145,7 @@
           
       public void initMotors(){
           
-          robot.frontRight.setDirection(DcMotor.Direction.FORWARD); 
+          robot.frontRight.setDirection(DcMotor.Direction.REVERSE); 
           robot.backRight.setDirection(DcMotor.Direction.REVERSE);
           robot.frontLeft.setDirection(DcMotor.Direction.REVERSE); 
           robot.backLeft.setDirection(DcMotor.Direction.FORWARD);
@@ -319,20 +327,23 @@
               telemetry.addData("duckWheel progress", robot.duckWheel.getTargetPosition() - robot.duckWheel.getCurrentPosition());
               telemetry.update();
           }
+          
+          robot.duckWheel.setPower(0);
+          duck = false;
       }
       
       public boolean autoArm() {
-        if (armTimer.seconds() <= 1.0) {
-          robot.hand.setPosition(0.45);
+        if (armTimer.seconds() <= 0.5) {
+          robot.hand.setPosition(0.70);
+        } else if (armTimer.seconds() <= 1.0) {
+          robot.arm.setPower(1);
         } else if (armTimer.seconds() <= 2.0) {
-          robot.arm.setPower(0.80);
-        } else if (armTimer.seconds() <= 3.1) {
           robot.arm.setPower(0);
-          robot.hand.setPosition(0);
-        } else if (armTimer.seconds() <= 4.3) {
-          robot.arm.setPower(-0.60);
-          robot.hand.setPosition(1);
-        } else if (armTimer.seconds() <= 5.0) {
+          robot.hand.setPosition(0.15);
+        } else if (armTimer.seconds() <= 2.5) {
+          robot.arm.setPower(-0.70);
+          robot.hand.setPosition(defaultPosition);
+        } else if (armTimer.seconds() <= 3.0) {
           robot.arm.setPower(0);
         } else {
           return true;

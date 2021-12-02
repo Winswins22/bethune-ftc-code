@@ -22,6 +22,8 @@ public class Main2 extends LinearOpMode {
     
     private ElapsedTime duckTimer = new ElapsedTime();
     private ElapsedTime armTimer = new ElapsedTime();
+    
+    private double defaultPosition = 0.98;
 
     @Override
     public void runOpMode() {
@@ -43,6 +45,7 @@ public class Main2 extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        initArm();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -59,7 +62,7 @@ public class Main2 extends LinearOpMode {
 
             robot.duckWheel.setPower(gamepad1.left_trigger);
             robot.intake.setPower(gamepad1.right_trigger);
-
+            telemetry.addData("current position", robot.arm.getCurrentPosition()); //
             if (gamepad1.right_bumper) {
               robot.intake.setPower(-1);
             } else if (gamepad1.left_bumper) {
@@ -77,12 +80,30 @@ public class Main2 extends LinearOpMode {
               if (autoArm()) {
                 armTimer.reset();
                 runArm = false;
+                initArm();
               }
             }
       
             //robot.intake.setPower(0.5);
 
         }
+    }
+    
+    public void initArm() {
+      // Default position
+      robot.hand.setPosition(defaultPosition);
+        
+      // robot.arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      // robot.arm.setTargetPosition(-209);
+      // robot.arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      // robot.arm.setPower(1);
+      
+      // while (opModeIsActive() && robot.arm.isBusy()) {
+        
+      // }
+      // robot.arm.setPower(0);
+      // robot.arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+      
     }
 
     public void mecanumDrive_Cartesian(double x, double y, double rotation) {
@@ -114,17 +135,17 @@ public class Main2 extends LinearOpMode {
     } // end mecanumDrive_Cartesian
 
     public boolean autoArm() {
-      if (armTimer.seconds() <= 1.0) {
-        robot.hand.setPosition(0.55);
+      if (armTimer.seconds() <= 0.5) {
+        robot.hand.setPosition(0.70);
+      } else if (armTimer.seconds() <= 1.0) {
+        robot.arm.setPower(1);
       } else if (armTimer.seconds() <= 2.0) {
-        robot.arm.setPower(0.85);
-      } else if (armTimer.seconds() <= 3.0) {
         robot.arm.setPower(0);
         robot.hand.setPosition(0.15);
-      } else if (armTimer.seconds() <= 4.0) {
-        robot.arm.setPower(-0.60);
-        robot.hand.setPosition(1);
-      } else if (armTimer.seconds() <= 4.5) {
+      } else if (armTimer.seconds() <= 2.5) {
+        robot.arm.setPower(-0.70);
+        robot.hand.setPosition(defaultPosition);
+      } else if (armTimer.seconds() <= 3.0) {
         robot.arm.setPower(0);
       } else {
         return true;
