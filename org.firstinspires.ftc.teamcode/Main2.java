@@ -16,7 +16,7 @@ public class Main2 extends LinearOpMode {
     double clawOffset = 0; // Servo mid position
     final double CLAW_SPEED = 0.02; // sets rate to move servo
 
-    final double SPEED_MULTIPLIER = 0.9;
+    final double SPEED_MULTIPLIER = 0.8;
 
     boolean runArm = false;
     
@@ -115,7 +115,7 @@ public class Main2 extends LinearOpMode {
 
     public boolean autoArm() {
       if (armTimer.seconds() <= 1.0) {
-        robot.hand.setPosition(0.45);
+        robot.hand.setPosition(0.55);
       } else if (armTimer.seconds() <= 2.0) {
         robot.arm.setPower(0.85);
       } else if (armTimer.seconds() <= 3.0) {
@@ -123,7 +123,7 @@ public class Main2 extends LinearOpMode {
         robot.hand.setPosition(0.15);
       } else if (armTimer.seconds() <= 4.0) {
         robot.arm.setPower(-0.60);
-        robot.hand.setPosition(0.97);
+        robot.hand.setPosition(1);
       } else if (armTimer.seconds() <= 4.5) {
         robot.arm.setPower(0);
       } else {

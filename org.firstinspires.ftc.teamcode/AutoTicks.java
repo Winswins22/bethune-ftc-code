@@ -61,6 +61,8 @@
       
       private ElapsedTime duckTimer = new ElapsedTime();
       private ElapsedTime armTimer = new ElapsedTime();
+      
+      boolean duck = true;
   
       /* Declare OpMode members. */
       HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -89,34 +91,41 @@
               if (!didOnce){
                   didOnce = true;
                   // move to carosel
-                  //moveMeters(1, 0, 0, 0.2, METERS_PER_TILE / 3);
+                  moveMeters(1, 0, 0, 0.2, METERS_PER_TILE / 2);
+                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES / 6);
                   
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE);
-                  moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 3);
+                  moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 4);
       
                   // duck wheel code here
-                  rotateDuckWheel(0.5, 2000);
-                  rotateDuckWheel(1.0, 2000);
+                  if (duck){
+                      rotateDuckWheel(0.5, -2000);
+                      //moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 10);
+                      rotateDuckWheel(1.0, -3000);
+                      duck = false;
+                  }
                   
                   // move back a little for rotation space
                   moveMeters(0, -1, 0, 0.3, METERS_PER_TILE / 3);
+                  move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES / 4);
                   
-                  // move to the shipping hub
+                  
+                  // // move to the shipping hub
                   move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
-                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE);
-                  move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
-                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 2);
+                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 2, false);
+                  move(0, 0, 1, 0.2, (int)(TICKS_ROTATE_90_DEGREES), false);
+                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 1.75);
                   
                   move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                  move(0, 1, 0, 0.2, TICKS_ROTATE_90_DEGREES / 4);
                   // insert arm code here
                   armTimer.reset();
-                  if (autoArm()) {
-                      armTimer.reset();
-                  }
+                  autoArm();
                   // end arm code
+                  move(0, -1, 0, 0.2, TICKS_ROTATE_90_DEGREES / 4);
                   move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
       
-                  // move to the warehouse
+                  // // move to the warehouse
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 2);
                   move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE);
@@ -157,7 +166,15 @@
       // overidden function to accept meters as target intead of ticks
       // see move() function below for docs
       public void moveMeters(int x, int y, int rotation, double power, double metersTarget){
-          move (x, y, rotation, power, (int)(metersTarget * TICKS_PER_METER));
+          move (x, y, rotation, power, (int)(metersTarget * TICKS_PER_METER), true);
+      }
+      
+      public void moveMeters(int x, int y, int rotation, double power, double metersTarget, boolean driveQuickly){
+          move (x, y, rotation, power, (int)(metersTarget * TICKS_PER_METER), driveQuickly);
+      }
+      
+      public void move(int x, int y, int rotation, double power, int ticksTarget){
+          move(x, y, rotation, power, ticksTarget, true);
       }
       
       /**
@@ -186,8 +203,10 @@
         * @param int ticksTarget. The amount of ticks for the motors to travel, given the gamepad
         *                         instructions above. If you wish to use meters instead of ticks, see 
         *                         moveMeters() and the constants at the top of AutoFunctionLib.java.
+        * @param boolean driveQuickly. Whether or not the program will wait until all the motors are done
+        *                              moving or not.
         */
-      public void move(int x, int y, int rotation, double power, int ticksTarget){
+      public void move(int x, int y, int rotation, double power, int ticksTarget, boolean driveQuickly){
           // invert
           //x = -x;
           rotation = -rotation;
@@ -196,10 +215,6 @@
           double wheelSpeeds[] = new double[4];
           // the ticks for the motors to run to
           int[] tickTargets = {0, 0, 0, 0};
-          
-          // whether or not the robot will be accurate or not.
-          // controls whether or not all motors have to be finished turning or not
-          boolean driveQuickly = true;
       
           // translate simulated gamepad inputs into their speeds to use to caclulate ticksTarget
           wheelSpeeds[0] = (x + y - rotation);
@@ -310,14 +325,14 @@
         if (armTimer.seconds() <= 1.0) {
           robot.hand.setPosition(0.45);
         } else if (armTimer.seconds() <= 2.0) {
-          robot.arm.setPower(0.85);
-        } else if (armTimer.seconds() <= 3.0) {
+          robot.arm.setPower(0.80);
+        } else if (armTimer.seconds() <= 3.1) {
           robot.arm.setPower(0);
-          robot.hand.setPosition(0.15);
-        } else if (armTimer.seconds() <= 4.0) {
+          robot.hand.setPosition(0);
+        } else if (armTimer.seconds() <= 4.3) {
           robot.arm.setPower(-0.60);
-          robot.hand.setPosition(0.97);
-        } else if (armTimer.seconds() <= 4.5) {
+          robot.hand.setPosition(1);
+        } else if (armTimer.seconds() <= 5.0) {
           robot.arm.setPower(0);
         } else {
           return true;
