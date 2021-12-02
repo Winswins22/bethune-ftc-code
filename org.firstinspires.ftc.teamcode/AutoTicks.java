@@ -50,7 +50,7 @@
       public static final double TICKS_PER_METER = 1500;
       
       
-      public static final int TICKS_ROTATE_90_DEGREES = 650;
+      public static final int TICKS_ROTATE_90_DEGREES = 675;
       // meters to move across 1 floor tile 
       public static final double METERS_PER_TILE = 0.6;
       // meters to move diagonally across 1 floor tile. Calculated by experimentation
@@ -131,22 +131,26 @@
           robot.backRight.setDirection(DcMotor.Direction.REVERSE);
           robot.frontLeft.setDirection(DcMotor.Direction.REVERSE); 
           robot.backLeft.setDirection(DcMotor.Direction.FORWARD);
+          robot.duckWheel.setDirection(DcMotor.Direction.FORWARD);
           
           robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
           robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
           robot.backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
           robot.backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+          robot.duckWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
           
           // reset target positions
           robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
           robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
           robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
           robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
+          robot.duckWheel.setTargetPosition(robot.duckWheel.getCurrentPosition());
           
           robot.frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
           robot.frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
           robot.backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
           robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+          robot.duckWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
       } 
       
       // overidden function to accept meters as target intead of ticks
@@ -237,8 +241,6 @@
           robot.backLeft.setPower(power);
           robot.backRight.setPower(power);
           
-          telemetry.addData("runArm", runArm);
-          
           // change if condition depending on if using rotation
           //if (rotation == 0.0){
           if (driveQuickly){
@@ -287,6 +289,20 @@
       
       public static double ticksToMeters (int ticks){
           return TICKS_PER_METER * (double)ticks;
+      }
+      
+      public void rotateDuckWheel(double speed, int ticksTarget){
+          robot.duckWheel.setTargetPosition(robot.duckWheel.getCurrentPosition() + ticksTarget);
+          // Turn On RUN_TO_POSITION
+          robot.duckWheel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+          // Start motion;
+          robot.duckWheel.setPower(speed);
+          
+          while (opModeIsActive() && robot.frontLeft.isBusy()){
+              telemetry.addData("Motors are running to Positions", ticksTarget);
+              telemetry.addData("frontLeft progress", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
+              telemetry.update();
+          }
       }
       
       public boolean autoArm() {
