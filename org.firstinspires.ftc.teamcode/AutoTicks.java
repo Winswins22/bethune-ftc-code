@@ -95,7 +95,8 @@
                   moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 3);
       
                   // duck wheel code here
-                  //robot.duckWheel.setPower(1);
+                  rotateDuckWheel(0.5, 2000);
+                  rotateDuckWheel(1.0, 2000);
                   
                   // move back a little for rotation space
                   moveMeters(0, -1, 0, 0.3, METERS_PER_TILE / 3);
@@ -298,9 +299,9 @@
           // Start motion;
           robot.duckWheel.setPower(speed);
           
-          while (opModeIsActive() && robot.frontLeft.isBusy()){
+          while (opModeIsActive() && robot.duckWheel.isBusy()){
               telemetry.addData("Motors are running to Positions", ticksTarget);
-              telemetry.addData("frontLeft progress", robot.frontLeft.getTargetPosition() - robot.frontLeft.getCurrentPosition());
+              telemetry.addData("duckWheel progress", robot.duckWheel.getTargetPosition() - robot.duckWheel.getCurrentPosition());
               telemetry.update();
           }
       }
