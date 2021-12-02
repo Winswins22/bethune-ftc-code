@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import java.util.List;
+import java.util.Random;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -23,9 +26,9 @@ public class AutoFunctionLib extends LinearOpMode {
     public static final double TICKS_PER_METER_FB = 1313;
     
     //at least this many wheels have to be idle for the wheelsAreBusy() to be true.
-    public static final int WHEELS_IDLE_MIN_COUNT = 4;
+    public static final int WHEELS_IDLE_MIN_COUNT = 3;
     
-    public static final int TICKS_PER_180 = 940;
+    public static final int TICKS_PER_180 = 820;
     
     HardwarePushbot robot = new HardwarePushbot(); //use this object for easy reference to components like motors.
     
@@ -69,7 +72,8 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.init(hardwareMap);
         
         initial = robot.frontLeft.getCurrentPosition();
-
+        int randint = ThreadLocalRandom.current().nextInt(1, 4); 
+        telemetry.addData("Randint: ", randint);
         telemetry.addData("Robot", "Initialized");
         telemetry.update();
  
@@ -77,10 +81,14 @@ public class AutoFunctionLib extends LinearOpMode {
         
         initWheelMotors();
         
+        Random random = new Random();
+        
         boolean flag1 = false, flag2 = false, flag3 = false, flag4 = false, flag5 = false, flag6 = false;
         boolean flag7 = false, flag8 = false, flag9 = false, flag10 = false, flag11 = false, flag12 = false;
         boolean flag13 = false, flag14 = false, flag15 = false, flag16 = false, flag17 = false, flag18 = false;
         // run until the end of the match (driver presses STOP)
+        
+        
         while (opModeIsActive()) {
             
             telemetry.addData("WheelsAreBusy: ", wheelsAreBusy());
@@ -89,13 +97,14 @@ public class AutoFunctionLib extends LinearOpMode {
             //1: Raise arm to prevent dragging, reverse into duck wheel, and spin duck whee, then stop duck wheel
             if (!flag1){
                 setArmPosition(-50, 600); //move arm up
-                moveTickFB(500, 200); //reverse into duck wheel 
+                moveTickFB(25, 150); //reverse into duck wheel 
                 duckMotor(1); //spin duck wheel
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 1);
+                    telemetry.addData("Randint: ", randint);
                     telemetry.update();
                 }
-                sleep(3500); //wait 3 seconds
+                sleep(1000); //wait 3 seconds
                 duckMotor(0); //shut off duck wheel
                 flag1 = true;
             }
@@ -103,9 +112,10 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //2: drive forwards and prepare to turn to storage tower
             if(!flag2 && !wheelsAreBusy()){
-                moveTickFB(-1000, 300);
+                moveTickFB(-1500, 600);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 2);
+                    telemetry.addData("Randint: ", randint);
                     telemetry.update();
                 }
                 flag2 = true;
@@ -114,9 +124,10 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //3: rotate 90 degrees left to face storage tower
             if (!flag3 && !wheelsAreBusy()){
-                rotateOnSpot(90, 100);
+                rotateOnSpot(90, 200);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 3);
+                    telemetry.addData("Randint: ", randint);
                     telemetry.update();
                 }
                 flag3 = true;
@@ -125,43 +136,74 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //4: drive towards tower
             if (!flag4 && !wheelsAreBusy()){
-                moveTickFB(500, 200);
-                telemetry.addData("Stage: ", 4);
-                telemetry.update();
+                moveTickFB(-540, 500);
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", 4);
+                    telemetry.addData("Randint: ", randint);
+                    telemetry.update();
+                }
                 flag4 = true;
             } 
+            initWheelMotors();
             
+            //-50, -70 -103
             //5: set arms to right position
             if (!flag5 && !wheelsAreBusy()){
-                setArmPosition(50, 100);
-                telemetry.addData("Stage: ", 5);
-                telemetry.update();
+                
+
+                
+                int pos = 0;
+                if(randint == 1){
+                    pos = -50;
+                } else if(randint == 2){
+                    pos = -70;
+                } else if(randint == 3){
+                    pos = -103;
+                }
+                
+                setArmPosition(pos, 200);
+                while(robot.armMotorL.isBusy()){
+                    telemetry.addData("Target arm Pos: ", pos);
+                    telemetry.addData("Randint: ", randint);
+                    telemetry.addData("Stage: ", 5);
+                    telemetry.update();
+                }
                 flag5 = true;
             } 
+            initWheelMotors();
             
             //6: eject item
             if (!flag6 && !wheelsAreBusy()){
                 intakeMotor(-1);
                 telemetry.addData("Stage: ", 6);
                 telemetry.update();
+                sleep(1500);
+                intakeMotor(0);
                 flag6 = true;
             } 
+            initWheelMotors();
             
             //7: turn 90 degrees left towards warehouse
             if (!flag7 && !wheelsAreBusy()){
-                rotateOnSpot(90, 100);
-                telemetry.addData("Stage: ", 7);
-                telemetry.update();
+                rotateOnSpot(-90, 100);
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", 7);
+                    telemetry.update();
+                }
                 flag7 = true;
             } 
+            initWheelMotors();
             
             //8: drive towards warehouse
             if (!flag8 && !wheelsAreBusy()){
-                moveTickFB(600, 300);
-                telemetry.addData("Stage: ", 8);
-                telemetry.update();
+                moveTickFB(-7000, 3000);
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", 8);
+                    telemetry.update();
+                }
                 flag8 = true;
             } 
+            initWheelMotors();
             
             telemetry.addData("Stage: ", "Finished");
             telemetry.addData("frontLeft motor position: ", robot.frontLeft.getCurrentPosition());
@@ -203,13 +245,19 @@ public class AutoFunctionLib extends LinearOpMode {
         return ticksToIncreaseBy;
     }
     
-    public void rotateOnSpot(double degrees, int degreesPerSecond){
+    public void rotateOnSpot(double degrees, double degreesPerSecond){
         
-        double ticks = (degrees / 180) * TICKS_PER_180;
-        if(degrees < 0)
-            ticks = -ticks;
+        degrees = -degrees;
+        
+        double ticks = (degrees / 180d) * (double)TICKS_PER_180;
             
-        double velocityTicks = (degreesPerSecond / 180) * TICKS_PER_180;
+        double velocityTicks = (degreesPerSecond / 180d) * (double)TICKS_PER_180;
+        
+        /*
+        if(degrees < 0){
+            ticks = -ticks;
+        }
+        */
         
         robot.frontLeft.setTargetPosition((int)Math.round( robot.frontLeft.getCurrentPosition() + ticks)); 
         robot.frontRight.setTargetPosition((int)Math.round( robot.frontRight.getCurrentPosition() + ticks)); 
