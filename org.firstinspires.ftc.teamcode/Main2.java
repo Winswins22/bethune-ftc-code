@@ -11,211 +11,201 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Main2 extends LinearOpMode {
 
-    /* Declare OpMode members. */
-    HardwarePushbot robot = new HardwarePushbot(); // Use a Pushbot's hardware
-    double clawOffset = 0; // Servo mid position
-    final double CLAW_SPEED = 0.02; // sets rate to move servo
+  /* Declare OpMode members. */
+  HardwarePushbot robot = new HardwarePushbot(); // Use a Pushbot's hardware
+  double clawOffset = 0; // Servo mid position
+  final double CLAW_SPEED = 0.02; // sets rate to move servo
 
-    final double SPEED_MULTIPLIER = 0.8;
+  final double SPEED_MULTIPLIER = 0.8;
 
-    boolean runArm = false;
-    
-    private ElapsedTime duckTimer = new ElapsedTime();
-    private ElapsedTime armTimer = new ElapsedTime();
-    
-    private double defaultPosition = 0.98;
+  boolean runArm = false;
 
-    @Override
-    public void runOpMode() {
-        double left;
-        double right;
-        double drive;
-        double turn;
-        double max;
+  private ElapsedTime duckTimer = new ElapsedTime();
+  private ElapsedTime armTimer = new ElapsedTime();
 
-        /*
-         * Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
-         */
-        robot.init(hardwareMap);
+  private double defaultPosition = 0.98;
 
-        // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Hello Driver"); //
-        telemetry.update();
+  @Override
+  public void runOpMode() {
+    double left;
+    double right;
+    double drive;
+    double turn;
+    double max;
 
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
-        initArm();
+    /*
+     * Initialize the hardware variables.
+     * The init() method of the hardware class does all the work here
+     */
+    robot.init(hardwareMap);
 
-        // run until the end of the match (driver presses STOP)
-        while (opModeIsActive()) {
+    // Send telemetry message to signify robot waiting;
+    telemetry.addData("Say", "Hello Driver"); //
+    telemetry.update();
 
-            // Run wheels in POV mode (note: The joystick goes negative when pushed
-            // forwards, so negate it)
-            // In this mode the Left stick moves the robot fwd and back, the Right stick
-            // turns left and right.
-            // This way it's also easy to just drive straight, or just turn.
-            drive = -gamepad1.left_stick_y;
-            turn = gamepad1.right_stick_x;
+    // Wait for the game to start (driver presses PLAY)
+    waitForStart();
+    initArm();
 
-            mecanumDrive_Cartesian(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
+    // run until the end of the match (driver presses STOP)
+    while (opModeIsActive()) {
 
-            robot.duckWheel.setPower(gamepad1.left_trigger);
-            robot.intake.setPower(gamepad1.right_trigger);
-            telemetry.addData("current position", robot.arm.getCurrentPosition()); //
-            if (gamepad1.right_bumper) {
-              robot.intake.setPower(-1);
-            } else if (gamepad1.left_bumper) {
-              robot.intake.setPower(1);
-            } else {
-              robot.intake.setPower(0);
-            }
+      // Run wheels in POV mode (note: The joystick goes negative when pushed
+      // forwards, so negate it)
+      // In this mode the Left stick moves the robot fwd and back, the Right stick
+      // turns left and right.
+      // This way it's also easy to just drive straight, or just turn.
+      drive = -gamepad1.left_stick_y;
+      turn = gamepad1.right_stick_x;
 
-            if (gamepad1.b) {
-              armTimer.reset();
-              runArm = true;
-            }
-      
-            if (runArm) {
-              if (autoArm()) {
-                armTimer.reset();
-                runArm = false;
-                initArm();
-              }
-            }
-      
-            //robot.intake.setPower(0.5);
+      mecanumDrive_Cartesian(-gamepad1.right_stick_x, gamepad1.right_stick_y, gamepad1.left_stick_x);
 
-        }
-    }
-    
-    public void initArm() {
-      // Default position
-      robot.hand.setPosition(defaultPosition);
-        
-      // robot.arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-      // robot.arm.setTargetPosition(-209);
-      // robot.arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-      // robot.arm.setPower(1);
-      
-      // while (opModeIsActive() && robot.arm.isBusy()) {
-        
-      // }
-      // robot.arm.setPower(0);
-      // robot.arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-      
-    }
-
-    public void mecanumDrive_Cartesian(double x, double y, double rotation) {
-        double wheelSpeeds[] = new double[4];
-
-        wheelSpeeds[0] = x + y - rotation;
-        wheelSpeeds[1] = -x + y + rotation;
-        wheelSpeeds[2] = -x + y - rotation;
-        wheelSpeeds[3] = x + y + rotation;
-
-        for (int i = 0; i < wheelSpeeds.length; i ++){
-          wheelSpeeds[i] = wheelSpeeds[i] * SPEED_MULTIPLIER;
-        }
-
-        // normalize(wheelSpeeds);
-
-        robot.frontLeft.setPower(-wheelSpeeds[0]);
-        robot.frontRight.setPower(wheelSpeeds[1]);
-        robot.backLeft.setPower(-wheelSpeeds[2]);
-        robot.backRight.setPower(wheelSpeeds[3]);
-
-        telemetry.addData("front Left", robot.frontLeft.getPower());
-        telemetry.addData("front Right", robot.frontRight.getPower());
-        telemetry.addData("back Left", robot.backLeft.getPower());
-        telemetry.addData("back Right", robot.backRight.getPower());
-        telemetry.addData("x y r", x + " " + y + " " + rotation);
-        telemetry.update();
-
-    } // end mecanumDrive_Cartesian
-
-    public boolean autoArm() {
-      if (armTimer.seconds() <= 0.5) {
-        robot.hand.setPosition(0.70);
-      } else if (armTimer.seconds() <= 1.0) {
-        robot.arm.setPower(1);
-      } else if (armTimer.seconds() <= 2.0) {
-        robot.arm.setPower(0);
-        robot.hand.setPosition(0.15);
-      } else if (armTimer.seconds() <= 2.5) {
-        robot.arm.setPower(-0.70);
-        robot.hand.setPosition(defaultPosition);
-      } else if (armTimer.seconds() <= 3.0) {
-        robot.arm.setPower(0);
+      robot.duckWheel.setPower(gamepad1.left_trigger);
+      robot.intake.setPower(gamepad1.right_trigger);
+      telemetry.addData("current position", robot.arm.getCurrentPosition()); //
+      if (gamepad1.right_bumper) {
+        robot.intake.setPower(-1);
+      } else if (gamepad1.left_bumper) {
+        robot.intake.setPower(1);
       } else {
-        return true;
+        robot.intake.setPower(0);
       }
-      return false;
-    }
 
-    public void AutoIntake() {
-        int ticksToIncreaseBy;
-        if (gamepad1.b) {
-            // fast for 5000tick
-            int Dpower = 1;
+      if (gamepad1.b) {
+        armTimer.reset();
+        runArm = true;
+      }
 
-            ticksToIncreaseBy = translatePowerToTicks(Dpower);
-            robot.intake.setTargetPosition(robot.intake.getCurrentPosition() + ticksToIncreaseBy);
-            robot.intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            robot.intake.setPower(Dpower);
-
-            while (robot.intake.isBusy()) {
-
-                // Display it for the driver.
-                telemetry.addData("Motors are running to Positions", "");
-                telemetry.addData("Intake progress",
-                        robot.intake.getTargetPosition() - robot.intake.getCurrentPosition());
-                telemetry.update();
-            }
+      if (runArm) {
+        if (autoArm()) {
+          armTimer.reset();
+          runArm = false;
+          initArm();
         }
-        telemetry.addData("Intake progress", "done");
+      }
+
+      // robot.intake.setPower(0.5);
+
+    }
+  }
+
+  public void initArm() {
+    // Default position
+    robot.hand.setPosition(defaultPosition);
+
+  }
+
+  public void mecanumDrive_Cartesian(double x, double y, double rotation) {
+    double wheelSpeeds[] = new double[4];
+
+    wheelSpeeds[0] = x + y - rotation;
+    wheelSpeeds[1] = -x + y + rotation;
+    wheelSpeeds[2] = -x + y - rotation;
+    wheelSpeeds[3] = x + y + rotation;
+
+    for (int i = 0; i < wheelSpeeds.length; i++) {
+      wheelSpeeds[i] = wheelSpeeds[i] * SPEED_MULTIPLIER;
     }
 
-    public void initMotor() {
-        robot.duckWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    // normalize(wheelSpeeds);
 
-        // reset target positions
-        robot.duckWheel.setTargetPosition(robot.frontLeft.getCurrentPosition());
+    robot.frontLeft.setPower(-wheelSpeeds[0]);
+    robot.frontRight.setPower(wheelSpeeds[1]);
+    robot.backLeft.setPower(-wheelSpeeds[2]);
+    robot.backRight.setPower(wheelSpeeds[3]);
 
-        robot.duckWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    telemetry.addData("front Left", robot.frontLeft.getPower());
+    telemetry.addData("front Right", robot.frontRight.getPower());
+    telemetry.addData("back Left", robot.backLeft.getPower());
+    telemetry.addData("back Right", robot.backRight.getPower());
+    telemetry.addData("x y r", x + " " + y + " " + rotation);
+    telemetry.update();
+
+  } // end mecanumDrive_Cartesian
+
+  // 0-0.20 go up
+  // 0.20-2.0 stop motor, turn bucket
+  // 2.0-2.5 default position, go back down
+  // 2.5-3.0 stop motor
+  public boolean autoArm() {// output arm
+    if (armTimer.seconds() <= 0.3) {
+      robot.hand.setPosition(0.7);
+      robot.arm.setPower(1);
+    } else if (armTimer.seconds() <= 1.5) {
+      robot.arm.setPower(0);
+      robot.hand.setPosition(0.52);
+    } else if (armTimer.seconds() <= 1.75) {
+      robot.arm.setPower(-0.83);
+      robot.hand.setPosition(defaultPosition);
+    } else if (armTimer.seconds() <= 1.80) {
+      robot.arm.setPower(0);
+    } else {
+      return true;
     }
+    return false;
+  }
 
-    public int translatePowerToTicks(int speed) {
-        return (int) (speed * 10000);
+  public void AutoIntake() {
+    int ticksToIncreaseBy;
+    if (gamepad1.b) {
+      // fast for 5000tick
+      int Dpower = 1;
+
+      ticksToIncreaseBy = translatePowerToTicks(Dpower);
+      robot.intake.setTargetPosition(robot.intake.getCurrentPosition() + ticksToIncreaseBy);
+      robot.intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+      robot.intake.setPower(Dpower);
+
+      while (robot.intake.isBusy()) {
+
+        // Display it for the driver.
+        telemetry.addData("Motors are running to Positions", "");
+        telemetry.addData("Intake progress",
+            robot.intake.getTargetPosition() - robot.intake.getCurrentPosition());
+        telemetry.update();
+      }
     }
+    telemetry.addData("Intake progress", "done");
+  }
 
-    public int translatePowerToTicks(double speed) {
-        return (int) (speed * 5000);
-    }
+  public void initMotor() {
+    robot.duckWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-    // private void normalize(double[] wheelSpeeds)
-    // {
-    // double maxMagnitude = Math.abs(wheelSpeeds[0]);
+    // reset target positions
+    robot.duckWheel.setTargetPosition(robot.frontLeft.getCurrentPosition());
 
-    // for (int i = 1; i < wheelSpeeds.length; i++)
-    // {
-    // double magnitude = Math.abs(wheelSpeeds[i]);
+    robot.duckWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+  }
 
-    // if (magnitude > maxMagnitude)
-    // {
-    // maxMagnitude = magnitude;
-    // }
-    // }
+  public int translatePowerToTicks(int speed) {
+    return (int) (speed * 10000);
+  }
 
-    // if (maxMagnitude > 1.0)
-    // {
-    // for (int i = 0; i < wheelSpeeds.length; i++)
-    // {
-    // wheelSpeeds[i] /= maxMagnitude;
-    // }
-    // }
-    // } //normalize
+  public int translatePowerToTicks(double speed) {
+    return (int) (speed * 5000);
+  }
+
+  // private void normalize(double[] wheelSpeeds)
+  // {
+  // double maxMagnitude = Math.abs(wheelSpeeds[0]);
+
+  // for (int i = 1; i < wheelSpeeds.length; i++)
+  // {
+  // double magnitude = Math.abs(wheelSpeeds[i]);
+
+  // if (magnitude > maxMagnitude)
+  // {
+  // maxMagnitude = magnitude;
+  // }
+  // }
+
+  // if (maxMagnitude > 1.0)
+  // {
+  // for (int i = 0; i < wheelSpeeds.length; i++)
+  // {
+  // wheelSpeeds[i] /= maxMagnitude;
+  // }
+  // }
+  // } //normalize
 }// end class
-
-
