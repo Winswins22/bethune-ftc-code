@@ -112,7 +112,7 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //2: drive forwards and prepare to turn to storage tower
             if(!flag2 && !wheelsAreBusy()){
-                moveTickFB(-1500, 600);
+                moveTickFB(-1590, 600);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 2);
                     telemetry.addData("Randint: ", randint);
@@ -154,11 +154,11 @@ public class AutoFunctionLib extends LinearOpMode {
                 
                 int pos = 0;
                 if(randint == 1){
-                    pos = -50;
+                    pos = -47;
                 } else if(randint == 2){
-                    pos = -70;
+                    pos = -71;
                 } else if(randint == 3){
-                    pos = -103;
+                    pos = -107;
                 }
                 
                 setArmPosition(pos, 200);
@@ -196,7 +196,7 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //8: drive towards warehouse
             if (!flag8 && !wheelsAreBusy()){
-                moveTickFB(-7000, 3000);
+                moveTickFB(-3000, 3000);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 8);
                     telemetry.update();

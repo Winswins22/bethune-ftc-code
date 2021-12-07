@@ -22,10 +22,17 @@ public class Main2 extends LinearOpMode {
     double speedMultiplier = 1.0;
     double turningMultiplier = 0.7;
     
-    //SENSITIVITY FORMULA: ROTATION_COEFFICIENT * (JOYSTICK ^ ROTATION_EXPONENT)
+    //SENSITIVITY FORMULA: ROTATION_COEFFICIENT * (JOYSTICK ^ ROTATION_EXPONENT) + ROTATION_OFFSET;
     //Remember that JOYSTICK is always clamped from -1 to 1
-    public static final double ROTATION_EXPONENT = 1;
+    public static final double ROTATION_EXPONENT = 1.75;
     public static final double ROTATION_COEFFICIENT = 0.3;
+    public static final double ROTATION_OFFSET = 0.03;
+    
+    //Same formula for back or forward
+    //Remember that JOYSTICK is always clamped from -1 to 1
+    public static final double FB_EXPONENT = 2.5;
+    public static final double FB_COEFFICIENT = 0.6;
+    public static final double FB_OFFSET = 0.02;
 
     //ARM TICK BOUNDS 
     public static final int ARM_MOTOR_UPPER_BOUNDS = -100000000;
@@ -34,7 +41,7 @@ public class Main2 extends LinearOpMode {
     //ARM CLAMPED MAX VELOCITY IN TICKS/S (LINEAR)
     public static final int ARM_MOTOR_MAX_VELOCITY = 600;
     
-    //The minimum measured velocity in ticks per second before an idle tick position is set;
+    //The delay before an arm position is saved after arm controls are released.
     //this is to prevent the arm from going back to the position controls were released after 
     //it overshoots that target, since the motor will always coast a little even after controls being released
     //This might not be necessary due to the weight of the arm.
@@ -79,6 +86,10 @@ public class Main2 extends LinearOpMode {
         boolean recordedArmControlReleaseTime = false;
         int idlePosL = 0, idlePosR = 0;
         double armReleasedTime = 0;
+        int armLevel = 1;
+        boolean m_dpadDown = false;
+        boolean m_dpadUp = false;
+        boolean usingArmLevels = false;
         while (opModeIsActive()) {
 
             // Run wheels in POV mode (note: The joystick goes negative when pushed forwards, so negate it)
@@ -87,12 +98,40 @@ public class Main2 extends LinearOpMode {
             drive = gamepad1.left_stick_y;
             turn  = gamepad1.right_stick_x;
             
-            //intake
+            //DPAD ARM LEVELS
+            if(!gamepad1.dpad_down){
+                m_dpadDown = false;
+            }
+            if(!gamepad1.dpad_up){
+                m_dpadUp = false;
+            }
             
-            if (gamepad1.left_bumper || gamepad1.dpad_up){
+            if(gamepad1.dpad_down && !m_dpadDown){
+                m_dpadDown = true;
+                if(armLevel > 1){
+                    armLevel--;
+                }
+                usingArmLevels = true;
+                setArmLevel(armLevel, 200);
+            }
+
+            if(gamepad1.dpad_up && !m_dpadUp){
+                m_dpadUp = true;
+                if(armLevel < 3){
+                    armLevel++;
+                }
+                usingArmLevels = true;
+                setArmLevel(armLevel, 200);
+            }
+            
+            telemetry.addData("Arm target level: ", armLevel);
+            telemetry.addData("Using arm levels: ", usingArmLevels);
+            
+            //intake
+            if (gamepad1.left_bumper){
                 intakePower(-1);
             }
-            else if (gamepad1.right_bumper || gamepad1.dpad_down){
+            else if (gamepad1.right_bumper){
                 intakePower(1);
             } else {
                 intakePower(0);
@@ -103,11 +142,11 @@ public class Main2 extends LinearOpMode {
             } else 
                 robot.duckMotor.setPower(0);
             
-            
-            robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             //UP
-            if(gamepad1.left_trigger > 0 && !(gamepad1.right_trigger > 0)){ 
+            if(gamepad1.left_trigger > 0 && !(gamepad1.right_trigger > 0)){
+                robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                usingArmLevels = false;
                 setIdlePosOnce = false;
                 recordedArmControlReleaseTime = false;
                 
@@ -117,7 +156,11 @@ public class Main2 extends LinearOpMode {
                 robot.armMotorR.setTargetPosition(ARM_MOTOR_UPPER_BOUNDS);
                 robot.armMotorR.setVelocity(gamepad1.left_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
             } 
-            else if(gamepad1.right_trigger > 0 && !(gamepad1.left_trigger > 0)){ //DOWN
+            //DOWN
+            else if(gamepad1.right_trigger > 0 && !(gamepad1.left_trigger > 0)){
+                robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                usingArmLevels = false;
                 setIdlePosOnce = false;
                 recordedArmControlReleaseTime = false;
                 
@@ -127,7 +170,7 @@ public class Main2 extends LinearOpMode {
                 robot.armMotorR.setTargetPosition(ARM_MOTOR_LOWER_BOUNDS);
                 robot.armMotorR.setVelocity(-gamepad1.right_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
                 
-            } else { //IDLE AND STAY
+            } else if(!usingArmLevels) { //IDLE AND STAY
             
                 if(!recordedArmControlReleaseTime){
                     armReleasedTime = runtime.seconds();
@@ -158,21 +201,44 @@ public class Main2 extends LinearOpMode {
     {
         double wheelSpeeds[] = new double[4];
         
+        //ROTATION
+        double rotationOffset = 0;
+        if(rotation != 0){
+            rotationOffset = ROTATION_OFFSET;
+        }
+        
+        double fb = y;
+        
         int positiveOrNegative = 0;
         if(rotation < 0)
             positiveOrNegative = -1;
         else if(rotation > 0)
             positiveOrNegative = 1; 
         
-        rotation = positiveOrNegative * ROTATION_COEFFICIENT * exp(rotation, ROTATION_EXPONENT);
+        rotation = positiveOrNegative * (ROTATION_COEFFICIENT * Math.pow(Math.abs(rotation), ROTATION_EXPONENT) + rotationOffset);
+        telemetry.addData("Rotation power: ", rotation);
+        
+        //FRONT/BACK
+        double fbOffset = 0;
+        if(y != 0) fbOffset = FB_OFFSET;
+        
+        int positiveOrNegativeFB = 0;
+        if(y < 0)
+            positiveOrNegativeFB = -1;
+        else if(y > 0)
+            positiveOrNegativeFB = 1; 
+        
+        fb = positiveOrNegativeFB * (FB_COEFFICIENT * Math.pow(Math.abs(fb), FB_EXPONENT) + fbOffset);
+        
+        telemetry.addData("FB power: ", fb);
     
-        wheelSpeeds[0] = y - rotation;
-        wheelSpeeds[1] = y + rotation;
-        wheelSpeeds[2] = y - rotation;
-        wheelSpeeds[3] = y + rotation;
+        wheelSpeeds[0] = fb - rotation;
+        wheelSpeeds[1] = fb + rotation;
+        wheelSpeeds[2] = fb - rotation;
+        wheelSpeeds[3] = fb + rotation;
     
         //normalize(wheelSpeeds);
-        reduceSpeeds(wheelSpeeds, speedMultiplier);
+        //reduceSpeeds(wheelSpeeds, speedMultiplier);
     
         robot.frontLeft.setPower(-wheelSpeeds[0]); //FL
         robot.frontRight.setPower(wheelSpeeds[1]); //FR
@@ -198,6 +264,29 @@ public class Main2 extends LinearOpMode {
         for (int i = 0; i < wheelSpeeds.length; i ++){
             wheelSpeeds[i] = wheelSpeeds[i] * multiplier;
         }
+    }
+    
+    public void setArmLevel(int level, int ticksVelocity){
+        
+        int targetPos = 0;
+        if(level == 1){
+            targetPos = -41;
+        }
+        if(level == 2){
+            targetPos = -71;
+        }
+        if(level == 3){
+            targetPos = -107;
+        }
+        
+        robot.armMotorL.setTargetPosition(targetPos);
+        robot.armMotorR.setTargetPosition(targetPos);
+        
+        robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        
+        robot.armMotorL.setVelocity(ticksVelocity);
+        robot.armMotorR.setVelocity(ticksVelocity);
     }
     
     public void intakePower(double power) {
@@ -255,18 +344,6 @@ public class Main2 extends LinearOpMode {
     /* private double reduceRotation(double rotation){
         return rotation * turningMultiplier; 
     } */
-    
-    public static double exp(double n, double e){
-        
-        if(e == 0) return 1;
-        
-        double num = n;
-        for(int i = 0; i < e; i++){
-            num *= num;
-        }
-        return num;
-        
-    }
 
 
 // private void normalize(double[] wheelSpeeds)
