@@ -50,7 +50,7 @@
       public static final double TICKS_PER_METER = 1500;
       
       
-      public static final int TICKS_ROTATE_90_DEGREES = 625;
+      public static final int TICKS_ROTATE_90_DEGREES = 660;
       // meters to move across 1 floor tile 
       public static final double METERS_PER_TILE = 0.6;
       // meters to move diagonally across 1 floor tile. Calculated by experimentation
@@ -92,52 +92,54 @@
               if (!didOnce){
                   didOnce = true;
                   
-                  //moveMeters(0, 1, 0, 0.05, METERS_PER_TILE * 5);
+                  // // move to carosel
+                  moveMeters(0, 1, 0, 0.2, METERS_PER_TILE / 2);
+                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
                   
-                  // move to carosel
-                  moveMeters(1, 0, 0, 0.2, METERS_PER_TILE / 2);
-                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES / 4);
-                  
-                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE);
+                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 0.8);
+                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
                   moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 4);
       
-                  // duck wheel code here
+                  // // duck wheel code here
                   if (duck){
-                      rotateDuckWheel(1, -6000);
+                      goForwardsSlowly();
+                      rotateDuckWheel(1, 6000);
+                      initMotors();
                       duck = false;
                   }
                   
-                  // move back a little for rotation space
-                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE / 3);
-                  move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES / 4);
-                  
-                  
-                  // // move to the shipping hub
+                  // // move back a little for rotation space
+                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE / 2);
                   move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
-                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 0.8);
-                  move(0, 0, 1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
-                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 1.65);
                   
-                  move(0, 0, 1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
-                  moveMeters(0, 1, 0, 0.2, (int)(METERS_PER_TILE / 5));
-                  // insert arm code here
+                  // slam into the back wall to realign
+                  moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 4);
                   
-                  armTimer.reset();
-                  while (true) {
-                      if (autoArm()) {
-                          armTimer.reset();
-                          break;
-                      }
-                  }
-                  // end arm code
-                  moveMeters(0, -1, 0, 0.2, (int)(METERS_PER_TILE / 5));
-                  move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                  
+                  // move to the shipping hub
+                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 2.2);
+                  
+                  // face the shipping hub
+                  move(0, 0, -1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
+                //   // insert arm code here
+                  
+                //   armTimer.reset();
+                //   while (true) {
+                //       if (autoArm()) {
+                //           armTimer.reset();
+                //           break;
+                //       }
+                //   }
+                //   // end arm code
+                  // face the warehouse
+                  move(0, 0, -1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
       
-                  // // move to the warehouse
+                  // move to the warehouse
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 2);
                   move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE);
                   move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                  moveMeters(1, 0, 0, 0.3, METERS_PER_TILE / 4);
                   moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 2);
               }
           }
@@ -169,7 +171,21 @@
           robot.backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
           robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
           robot.duckWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+          
+          robot.frontLeft.setPower(0);
+          robot.frontRight.setPower(0);
+          robot.backLeft.setPower(0);
+          robot.backRight.setPower(0);
       } 
+      
+      // use power to move motors very slowly during duck spinning
+      public void goForwardsSlowly(){
+        double power = 0.02;
+        robot.frontLeft.setPower(power);
+        robot.frontRight.setPower(power);
+        robot.backLeft.setPower(power);
+        robot.backRight.setPower(power);
+      }
       
       // overidden function to accept meters as target intead of ticks
       // see move() function below for docs
