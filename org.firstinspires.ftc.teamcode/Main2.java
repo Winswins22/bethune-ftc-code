@@ -24,7 +24,8 @@ public class Main2 extends LinearOpMode {
     
     //SENSITIVITY FORMULA: ROTATION_COEFFICIENT * (JOYSTICK ^ ROTATION_EXPONENT) + ROTATION_OFFSET;
     //Remember that JOYSTICK is always clamped from -1 to 1
-    public static final double ROTATION_EXPONENT = 1.75;
+    //public static final double ROTATION_EXPONENT = 1.75;
+    public static final double ROTATION_EXPONENT = 2.5;
     public static final double ROTATION_COEFFICIENT = 0.3;
     public static final double ROTATION_OFFSET = 0.03;
     
@@ -107,6 +108,11 @@ public class Main2 extends LinearOpMode {
             }
             
             if(gamepad1.dpad_down && !m_dpadDown){
+                //init arm level to 1 if we weren't using it prior
+                if(!usingArmLevels){
+                    setArmLevel(1, 200);
+                }
+                
                 m_dpadDown = true;
                 if(armLevel > 1){
                     armLevel--;
@@ -116,6 +122,11 @@ public class Main2 extends LinearOpMode {
             }
 
             if(gamepad1.dpad_up && !m_dpadUp){
+                //init arm level to 1 if we weren't using it prior
+                if(!usingArmLevels){
+                    setArmLevel(1, 200);
+                }
+
                 m_dpadUp = true;
                 if(armLevel < 3){
                     armLevel++;
@@ -123,6 +134,7 @@ public class Main2 extends LinearOpMode {
                 usingArmLevels = true;
                 setArmLevel(armLevel, 200);
             }
+            
             
             telemetry.addData("Arm target level: ", armLevel);
             telemetry.addData("Using arm levels: ", usingArmLevels);

@@ -71,6 +71,11 @@ public class AutoFunctionLib extends LinearOpMode {
 
         robot.init(hardwareMap);
         
+        initVuforia();
+        initTfod();
+        tfod.activate();
+        tfod.setZoom(2.5, 16.0/9.0);
+        
         initial = robot.frontLeft.getCurrentPosition();
         int randint = ThreadLocalRandom.current().nextInt(1, 4); 
         telemetry.addData("Randint: ", randint);
