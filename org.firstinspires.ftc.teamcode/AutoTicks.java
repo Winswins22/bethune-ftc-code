@@ -63,6 +63,7 @@
       private ElapsedTime armTimer = new ElapsedTime();
       
       private boolean duck = true;
+      private boolean slept = false;
       private double defaultPosition = 0.95;
   
       /* Declare OpMode members. */
@@ -103,7 +104,7 @@
                   // // duck wheel code here
                   if (duck){
                       goForwardsSlowly();
-                      rotateDuckWheel(1, 6000);
+                      rotateDuckWheel(1, -6000);
                       initMotors();
                       duck = false;
                   }
@@ -117,20 +118,28 @@
                   
                   
                   // move to the shipping hub
-                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 2.2);
+                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 0.2);
+                  
+                  // """tensorflow"""
+                  if (!slept){
+                    sleep(slept, 3);
+                    slept = true;
+                  }
+                  
+                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 1.8);
                   
                   // face the shipping hub
                   move(0, 0, -1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
-                //   // insert arm code here
+                  // insert arm code here
                   
-                //   armTimer.reset();
-                //   while (true) {
-                //       if (autoArm()) {
-                //           armTimer.reset();
-                //           break;
-                //       }
-                //   }
-                //   // end arm code
+                  armTimer.reset();
+                  while (true) {
+                      if (autoArm()) {
+                          armTimer.reset();
+                          break;
+                      }
+                  }
+                  // end arm code
                   // face the warehouse
                   move(0, 0, -1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
       
@@ -348,24 +357,43 @@
           duck = false;
       }
       
-      public boolean autoArm() {
-        if (armTimer.seconds() <= 0.5) {
-          robot.hand.setPosition(0.70);
-        } else if (armTimer.seconds() <= 1.0) {
-          robot.arm.setPower(1);
-        } else if (armTimer.seconds() <= 2.0) {
-          robot.arm.setPower(0);
-          robot.hand.setPosition(0.15);
-        } else if (armTimer.seconds() <= 2.5) {
-          robot.arm.setPower(-0.70);
-          robot.hand.setPosition(defaultPosition);
-        } else if (armTimer.seconds() <= 3.0) {
-          robot.arm.setPower(0);
-        } else {
-          return true;
-        }
-        return false;
+    // 0-0.20 go up
+    // 0.20-2.0 stop motor, turn bucket
+    // 2.0-2.5 default position, go back down
+    // 2.5-3.0 stop motor
+    public boolean autoArm() {//output arm
+      if (armTimer.seconds() <= 0.3) {
+        robot.hand.setPosition(0.7);
+        robot.arm.setPower(1);
       }
+      else if (armTimer.seconds() <= 1.5){
+        robot.arm.setPower(0);
+        robot.hand.setPosition(0.52);
+      }
+      else if (armTimer.seconds() <= 1.75) {
+        robot.arm.setPower(-0.80);
+        robot.hand.setPosition(defaultPosition);
+      }
+      else if (armTimer.seconds() <= 1.80) {
+        robot.arm.setPower(0);
+      }else {
+        return true;
+      }
+      return false;
+    }
+
+    public void sleep(boolean sleptAlready, int sleepSecs){    
+      if (sleptAlready){
+        return;
+      }
+      ElapsedTime sleepTimer = new ElapsedTime();
+      
+      while (true){
+        if (sleepTimer.seconds() > sleepSecs){
+          return;
+        } 
+      }
+    }        
           
   }
   
