@@ -25,6 +25,8 @@ public class AutoFunctionLib extends LinearOpMode {
     //approximate ticks to traverse length (DRIVE): basically 
     public static final double TICKS_PER_METER_FB = 1313;
     
+    public static final double CAMERA_SCAN_SECONDS = 2d;
+    
     //at least this many wheels have to be idle for the wheelsAreBusy() to be true.
     public static final int WHEELS_IDLE_MIN_COUNT = 3;
     
@@ -32,7 +34,7 @@ public class AutoFunctionLib extends LinearOpMode {
     
     HardwarePushbot robot = new HardwarePushbot(); //use this object for easy reference to components like motors.
     
-    ElapsedTime elapsedTime = new ElapsedTime();
+    ElapsedTime runtime = new ElapsedTime();
     
     //Assumes that the bottom-left (red markers on left side of field) is 0,0. Measured in meters since ticks do not
     //necessarily correspond to distance (e.g. ticks/m is different when strafing).
@@ -92,8 +94,9 @@ public class AutoFunctionLib extends LinearOpMode {
         boolean flag7 = false, flag8 = false, flag9 = false, flag10 = false, flag11 = false, flag12 = false;
         boolean flag13 = false, flag14 = false, flag15 = false, flag16 = false, flag17 = false, flag18 = false;
         // run until the end of the match (driver presses STOP)
-        
-        
+        double stopTime = 0d;
+        boolean duckFound = false;
+        int duckLevel = 0;
         while (opModeIsActive()) {
             
             telemetry.addData("WheelsAreBusy: ", wheelsAreBusy());
@@ -115,15 +118,185 @@ public class AutoFunctionLib extends LinearOpMode {
             }
             initWheelMotors();
             
-            //2: drive forwards and prepare to turn to storage tower
+            //2.1: drive forwards and align with first marker
             if(!flag2 && !wheelsAreBusy()){
-                moveTickFB(-1590, 600);
+                moveTickFB(-285, 250);
                 while(wheelsAreBusy()){
-                    telemetry.addData("Stage: ", 2);
+                    telemetry.addData("Stage: ", "2.1: aligning");
                     telemetry.addData("Randint: ", randint);
+                    telemetry.addData("Duck found: ", duckFound);
+                    telemetry.addData("Duck level: ", duckLevel);
                     telemetry.update();
                 }
                 flag2 = true;
+            }
+            initWheelMotors();
+            
+            //2.1: scan for 2 seconds
+            if(!flag9 && !wheelsAreBusy()){
+                stopTime = runtime.seconds();
+                flag9 = true;
+                while(runtime.seconds() - stopTime < CAMERA_SCAN_SECONDS){
+                    telemetry.addData("Stage: ", "2.1: scanning");
+                    boolean detected = false;
+                    telemetry.addData("runtime: ", runtime.seconds());                    
+                    if (tfod != null) {
+                        // getUpdatedRecognitions() will return null if no new information is available since
+                        // the last time that call was made.
+                        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                        if (updatedRecognitions != null) {
+                          telemetry.addData("# Object Detected", updatedRecognitions.size());
+                          // step through the list of recognitions and display boundary info.
+                          int i = 0;
+                          for (Recognition recognition : updatedRecognitions) {
+                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                                    recognition.getLeft(), recognition.getTop());
+                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                                    recognition.getRight(), recognition.getBottom());
+                            i++;
+                            if(recognition.getLabel().equals("Duck")){
+                                detected = true;
+                            }
+                          }
+                        }
+                    }
+                    if(detected){
+                        duckFound = true;
+                        duckLevel = 1;
+                    }
+                    telemetry.update();
+                }
+            }
+            initWheelMotors();
+            
+            //2.2: drive forwards and align with second marker
+            if(!flag10 && !wheelsAreBusy() && !duckFound){
+                moveTickFB(-285, 250);
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", "2.2: aligning");
+                    telemetry.addData("Duck found: ", duckFound);
+                    telemetry.addData("Duck level: ", duckLevel);
+                    telemetry.update();
+                }
+                flag10 = true;
+            }
+            initWheelMotors();
+            
+            //2.2: scan for 2 seconds
+            if(!flag11 && !wheelsAreBusy() && !duckFound){
+                stopTime = runtime.seconds();
+                flag11 = true;
+                while(runtime.seconds() - stopTime < CAMERA_SCAN_SECONDS){
+                    telemetry.addData("Stage: ", "2.2: scanning");
+                    telemetry.addData("runtime: ", runtime.seconds());
+                    boolean detected = false;
+                    if (tfod != null) {
+                        
+                        // getUpdatedRecognitions() will return null if no new information is available since
+                        // the last time that call was made.
+                        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                        if (updatedRecognitions != null) {
+                          telemetry.addData("# Object Detected", updatedRecognitions.size());
+                          // step through the list of recognitions and display boundary info.
+                          int i = 0;
+                          for (Recognition recognition : updatedRecognitions) {
+                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                                    recognition.getLeft(), recognition.getTop());
+                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                                    recognition.getRight(), recognition.getBottom());
+                            i++;
+                            if(recognition.getLabel().equals("Duck")){
+                                detected = true;
+                            }
+                          }
+                        }
+                    }
+                    if(detected){
+                        duckFound = true;
+                        duckLevel = 2;
+                    }
+                    telemetry.update();
+                }
+            }
+            initWheelMotors();
+            
+            //2.3: drive forwards and align with third marker
+            if(!flag12 && !wheelsAreBusy() && !duckFound){
+                moveTickFB(-285, 250);
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", "2.3: aligning");
+                    telemetry.addData("Duck found: ", duckFound);
+                    telemetry.addData("Duck level: ", duckLevel);
+                    telemetry.update();
+                }
+                flag12 = true;
+            }
+            initWheelMotors();
+            
+            //2.3: scan for 2 seconds
+            if(!flag13 && !wheelsAreBusy() && !duckFound){
+                stopTime = runtime.seconds();
+                flag13 = true;
+                while(runtime.seconds() - stopTime < CAMERA_SCAN_SECONDS){
+                    telemetry.addData("Stage: ", "2.3: scanning");
+                    telemetry.addData("runtime: ", runtime.seconds());
+                    boolean detected = false;
+                    if (tfod != null) {
+                        
+                        // getUpdatedRecognitions() will return null if no new information is available since
+                        // the last time that call was made.
+                        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                        if (updatedRecognitions != null) {
+                          telemetry.addData("# Object Detected", updatedRecognitions.size());
+                          // step through the list of recognitions and display boundary info.
+                          int i = 0;
+                          for (Recognition recognition : updatedRecognitions) {
+                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                                    recognition.getLeft(), recognition.getTop());
+                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                                    recognition.getRight(), recognition.getBottom());
+                            i++;
+                            if(recognition.getLabel().equals("Duck")){
+                                detected = true;
+                            }
+                          }
+                        }
+                    }
+                    if(detected){
+                        duckFound = true;
+                        duckLevel = 3;
+                    }
+                    telemetry.update();
+                }
+            }
+            initWheelMotors();
+            
+            //2.4: move and align broadside with tower
+            if (!flag14 && !wheelsAreBusy()){
+                if(duckFound){
+                    if(duckLevel == 1){
+                        moveTickFB(-1200, 400);
+                    }
+                    if(duckLevel == 2){
+                        moveTickFB(-900, 400);
+                    }
+                    if(duckLevel == 3){
+                        moveTickFB(-600, 400);
+                    }
+                } else {
+                    moveTickFB(-600, 500);
+                }
+                while(wheelsAreBusy()){
+                    telemetry.addData("Stage: ", "2.4: aligning for turn");
+                    telemetry.addData("Randint: ", randint);
+                    telemetry.addData("Duck found: ", duckFound);
+                    telemetry.addData("Duck level: ", duckLevel);
+                    telemetry.update();
+                }
+                flag14 = true;
             }
             initWheelMotors();
             
@@ -133,6 +306,8 @@ public class AutoFunctionLib extends LinearOpMode {
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 3);
                     telemetry.addData("Randint: ", randint);
+                    telemetry.addData("Duck found: ", duckFound);
+                    telemetry.addData("Duck level: ", duckLevel);
                     telemetry.update();
                 }
                 flag3 = true;
@@ -141,7 +316,7 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //4: drive towards tower
             if (!flag4 && !wheelsAreBusy()){
-                moveTickFB(-540, 500);
+                moveTickFB(-620, 500);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 4);
                     telemetry.addData("Randint: ", randint);
@@ -151,20 +326,29 @@ public class AutoFunctionLib extends LinearOpMode {
             } 
             initWheelMotors();
             
-            //-50, -70 -103
+            //-47, -71, -107
             //5: set arms to right position
             if (!flag5 && !wheelsAreBusy()){
                 
-
-                
                 int pos = 0;
-                if(randint == 1){
-                    pos = -47;
-                } else if(randint == 2){
-                    pos = -71;
-                } else if(randint == 3){
-                    pos = -107;
+                if(duckFound == false){
+                    if(randint == 1){
+                        pos = -47;
+                    } else if(randint == 2){
+                        pos = -71;
+                    } else if(randint == 3){
+                        pos = -107;
+                    }
+                } else {
+                    if(duckLevel == 1){
+                        pos = -47;
+                    } else if(duckLevel == 2){
+                        pos = -71;
+                    } else if(duckLevel == 3){
+                        pos = -107;
+                    }
                 }
+                
                 
                 setArmPosition(pos, 200);
                 while(robot.armMotorL.isBusy()){

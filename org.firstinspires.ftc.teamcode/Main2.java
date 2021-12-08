@@ -1,17 +1,25 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import java.util.List;
 
 
 @TeleOp(name="Pushbot: Mecanum wheels", group="mode")
 
-public class Main2 extends LinearOpMode {
+public class Main2 extends LinearOpMode { 
 
     /* Declare OpMode members. */
     HardwarePushbot robot           = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -65,6 +73,9 @@ public class Main2 extends LinearOpMode {
         double drive;
         double turn;
         double max;
+        
+        robot.init(hardwareMap);
+        
 
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
@@ -98,6 +109,9 @@ public class Main2 extends LinearOpMode {
             // This way it's also easy to just drive straight, or just turn.
             drive = gamepad1.left_stick_y;
             turn  = gamepad1.right_stick_x;
+            
+            
+            
             
             //DPAD ARM LEVELS
             if(!gamepad1.dpad_down){
@@ -141,12 +155,12 @@ public class Main2 extends LinearOpMode {
             
             //intake
             if (gamepad1.left_bumper){
-                intakePower(-1);
+                intakeVelocity(-340);
             }
             else if (gamepad1.right_bumper){
-                intakePower(1);
+                intakeVelocity(4000);
             } else {
-                intakePower(0);
+                intakeVelocity(0);
             } 
             
             if(gamepad1.x){
@@ -288,7 +302,7 @@ public class Main2 extends LinearOpMode {
             targetPos = -71;
         }
         if(level == 3){
-            targetPos = -107;
+            targetPos = -100;
         }
         
         robot.armMotorL.setTargetPosition(targetPos);
@@ -304,6 +318,10 @@ public class Main2 extends LinearOpMode {
     public void intakePower(double power) {
         robot.intakeMotor.setPower(power);
     } 
+    
+    public void intakeVelocity(int ticksVelocity){
+        robot.intakeMotor.setVelocity(ticksVelocity);
+    }
 
     private void resetMotors(){
         robot.frontLeft.setPower(0);
@@ -352,6 +370,10 @@ public class Main2 extends LinearOpMode {
         robot.armMotorL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.armMotorR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     } 
+    
+    
+    
+    
 
     /* private double reduceRotation(double rotation){
         return rotation * turningMultiplier; 
