@@ -7,16 +7,14 @@ import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "Pushbot: Mecanum wheels", group = "mode")
+@TeleOp(name = "Pushbot: Manual Mode", group = "Linear Opmode")
 
 public class Main2 extends LinearOpMode {
 
   /* Declare OpMode members. */
   HardwarePushbot robot = new HardwarePushbot(); // Use a Pushbot's hardware
-  double clawOffset = 0; // Servo mid position
-  final double CLAW_SPEED = 0.02; // sets rate to move servo
 
-  final double SPEED_MULTIPLIER = 0.8;
+  final double SPEED_MULTIPLIER = 0.81;
 
   boolean runArm = false;
 
@@ -43,7 +41,7 @@ public class Main2 extends LinearOpMode {
     telemetry.addData("Say", "Hello Driver"); //
     telemetry.update();
 
-    // Wait for the game to start (driver presses PLAY)
+    // Wait for tdhe game to start (driver presses PLAY)
     waitForStart();
     initArm();
 
@@ -70,10 +68,20 @@ public class Main2 extends LinearOpMode {
       } else {
         robot.intake.setPower(0);
       }
+      
+      if (gamepad1.dpad_up) {
+        robot.arm.setPower(0.1);
+      }else if (gamepad1.dpad_down) {
+        robot.arm.setPower(-0.1);
+      }else {
+        robot.arm.setPower(0);
+      }
 
       if (gamepad1.b) {
         armTimer.reset();
         runArm = true;
+      } else if (gamepad1.y) {
+        robot.hand.setPosition(0.7);
       }
 
       if (runArm) {
@@ -83,9 +91,6 @@ public class Main2 extends LinearOpMode {
           initArm();
         }
       }
-
-      // robot.intake.setPower(0.5);
-
     }
   }
 
@@ -123,21 +128,19 @@ public class Main2 extends LinearOpMode {
 
   } // end mecanumDrive_Cartesian
 
-  // 0-0.20 go up
-  // 0.20-2.0 stop motor, turn bucket
-  // 2.0-2.5 default position, go back down
-  // 2.5-3.0 stop motor
   public boolean autoArm() {// output arm
     if (armTimer.seconds() <= 0.3) {
       robot.hand.setPosition(0.7);
       robot.arm.setPower(1);
-    } else if (armTimer.seconds() <= 1.5) {
-      robot.arm.setPower(0);
-      robot.hand.setPosition(0.52);
-    } else if (armTimer.seconds() <= 1.75) {
-      robot.arm.setPower(-0.83);
+    } else if (armTimer.seconds() <= 1.8) {
+      robot.arm.setPower(0.001);
+      robot.hand.setPosition(0.45);
+    } else if (armTimer.seconds() <= 1.95) {
+      robot.arm.setPower(-1);
       robot.hand.setPosition(defaultPosition);
-    } else if (armTimer.seconds() <= 1.80) {
+    } else if (armTimer.seconds() <= 2.5) {
+      robot.arm.setPower(-0.15);
+    } else if (armTimer.seconds() <= 3.0) {
       robot.arm.setPower(0);
     } else {
       return true;
