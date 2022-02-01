@@ -10,14 +10,13 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name = "BarcodeReading", group = "mode")
+//import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class BarcodeReading {
+public class BarcodeReader {
 
+  //HardwarePushbot robot = new HardwarePushbot(); // use this object for easy reference to components like motors.
   public static final double CAMERA_SCAN_SECONDS = 4d;
   double stopTime = 0d;
-
-  HardwarePushbot robot = new HardwarePushbot(); // use this object for easy reference to components like motors.
 
   ElapsedTime runtime = new ElapsedTime();
 
@@ -45,67 +44,67 @@ public class BarcodeReading {
 
   // END IMAGE DETECTION VARS
 
-  @Override
-  public void runOpMode() {
+  public BarcodeReader() {
     robot.init(hardwareMap);
-
     initVuforia();
     initTfod();
     if (tfod != null) {
       tfod.activate();
       tfod.setZoom(1, 16.0 / 9.0);
     }
-    waitForStart();
+
+  }
+
+  // Scan for ducks
+  // Returns the level that the duck is on.
+  public int scan(){
     boolean duckFound = false;
     int duckLevel = 0;
 
-    while (opModeIsActive()) {
-      // 2.1: scan for 2 seconds
-      stopTime = runtime.seconds();
-      while (runtime.seconds() - stopTime < CAMERA_SCAN_SECONDS) {
-        telemetry.addData("runtime: ", runtime.seconds());
-        if (tfod != null) {
-          // getUpdatedRecognitions() will return null if no new information is available
-          // since
-          // the last time that call was made.
-          List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-          if (updatedRecognitions != null) {
-            telemetry.addData("# Object Detected", updatedRecognitions.size());
-            // step through the list of recognitions and display boundary info.
-            // int i = 0;
-            for (Recognition recognition : updatedRecognitions) {
-              // telemetry.addData(String.format("label (%d, %.1f)", i,
-              // recognition.getLeft()), recognition.getLabel());
-              // telemetry.addData(String.format(" left,top (%d)", i), "%.1f , %.1f",
-              // recognition.getLeft(), recognition.getTop());
-              // i++;
-              if (recognition.getLabel() == "Duck" || recognition.getLabel() == "Marker") {
-                placeRecognitionInArray(recognition);
-              }
+    // 2.1: scan for 2 seconds
+    stopTime = runtime.seconds();
+    while (runtime.seconds() - stopTime < CAMERA_SCAN_SECONDS) {
+      //telemetry.addData("runtime: ", runtime.seconds());
+      if (tfod != null) {
+        // getUpdatedRecognitions() will return null if no new information is available
+        // since
+        // the last time that call was made.
+        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+        if (updatedRecognitions != null) {
+          //telemetry.addData("# Object Detected", updatedRecognitions.size());
+          // step through the list of recognitions and display boundary info.
+          // int i = 0;
+          for (Recognition recognition : updatedRecognitions) {
+            // telemetry.addData(String.format("label (%d, %.1f)", i,
+            // recognition.getLeft()), recognition.getLabel());
+            // telemetry.addData(String.format(" left,top (%d)", i), "%.1f , %.1f",
+            // recognition.getLeft(), recognition.getTop());
+            // i++;
+            if (recognition.getLabel() == "Duck" || recognition.getLabel() == "Marker") {
+              placeRecognitionInArray(recognition);
             }
-            if (updatedRecognitions.size() != 0) {
-              telemetry.update();
-              try {
-                Thread.sleep(1000);
-              } catch (Exception e) {
-              }
-            }
-
           }
+          if (updatedRecognitions.size() != 0) {
+            //telemetry.update();
+            try {
+              Thread.sleep(1000);
+            } catch (Exception e) {
+            }
+          }
+
         }
-        telemetry.update();
       }
-      duckLevel = calculateLevel();
-      telemetry.addData("Duck Level", duckLevel);
-      telemetry.update();
-      try {
-        Thread.sleep(5000);
-      } catch (Exception e) {
-      }
+      //telemetry.update();
     }
+    duckLevel = calculateLevel();
+    // telemetry.addData("Duck Level", duckLevel);
+    // telemetry.update();
+
+    return duckLevel;
   }
 
   private void initVuforia() {
+
     /*
      * Configure Vuforia by creating a Parameter object, and passing it to the
      * Vuforia engine.
@@ -209,4 +208,15 @@ public class BarcodeReading {
     }
   }
 
+}
+
+
+// while(){
+//   if(timer.seconds > x){
+//     wheels();
+//   }
+
+//   if (timer2.seconds > x){
+//     arm();
+//   }
 }
