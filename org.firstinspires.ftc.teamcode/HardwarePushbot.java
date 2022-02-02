@@ -30,6 +30,8 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -59,10 +61,18 @@ public class HardwarePushbot
     public DcMotorEx  backLeft     = null;
     public DcMotorEx    backRight    = null;
     
-    public DcMotorEx    intakeMotor    = null;
-    public DcMotorEx    duckMotor    = null;
-    public DcMotorEx    armMotorL    = null;
-    public DcMotorEx    armMotorR    = null;
+    public DcMotorEx  horizontalSlider   = null;
+    public DcMotorEx  verticalSlider   = null;
+    
+    public Servo  bucketArm   = null;
+    public Servo  bucketSwivel   = null;
+    
+    public CRServo  intake   = null;
+    
+    //public DcMotorEx    intakeMotor    = null;
+    //public DcMotorEx    duckMotor    = null;
+    //public DcMotorEx    armMotorL    = null;
+    //public DcMotorEx    armMotorR    = null;
     
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -84,22 +94,28 @@ public class HardwarePushbot
         backLeft    = hwMap.get(DcMotorEx.class, "backLeft");
         backRight    = hwMap.get(DcMotorEx.class, "backRight");
         
-        intakeMotor    = hwMap.get(DcMotorEx.class, "intakeMotor");
-        duckMotor    = hwMap.get(DcMotorEx.class, "duckMotor");
-        armMotorL    = hwMap.get(DcMotorEx.class, "armMotorL");
-        armMotorR    = hwMap.get(DcMotorEx.class, "armMotorR");
+        horizontalSlider   = hwMap.get(DcMotorEx.class, "horizontalSlider");
+        verticalSlider   = hwMap.get(DcMotorEx.class, "verticalSlider");
+        bucketArm   = hwMap.get(Servo.class, "bucketArm");
+        bucketSwivel   = hwMap.get(Servo.class, "bucketSwivel");
+        
+        intake   = hwMap.get(CRServo.class, "intake");
+        
+        //intakeMotor    = hwMap.get(DcMotorEx.class, "intakeMotor");
+        //duckMotor    = hwMap.get(DcMotorEx.class, "duckMotor");
         
         // Set to FORWARD or REVERSE depending on motors on robot
-        frontLeft.setDirection(DcMotorEx.Direction.REVERSE);
-        frontRight.setDirection(DcMotorEx.Direction.REVERSE);
-        backLeft.setDirection(DcMotorEx.Direction.REVERSE); 
-        backRight.setDirection(DcMotorEx.Direction.REVERSE);
+        frontLeft.setDirection(DcMotorEx.Direction.FORWARD);
+        frontRight.setDirection(DcMotorEx.Direction.FORWARD);
+        backLeft.setDirection(DcMotorEx.Direction.FORWARD); 
+        backRight.setDirection(DcMotorEx.Direction.FORWARD);
+        horizontalSlider.setDirection(DcMotorEx.Direction.FORWARD);
+        verticalSlider.setDirection(DcMotorEx.Direction.FORWARD);
         
-        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        duckMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        armMotorL.setDirection(DcMotorEx.Direction.REVERSE);
-        armMotorR.setDirection(DcMotorEx.Direction.FORWARD);
+        //intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        //duckMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        //armMotorL.setDirection(DcMotorEx.Direction.REVERSE);
+        //armMotorR.setDirection(DcMotorEx.Direction.FORWARD);
 
     }
  }
-

@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.CRServo;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
@@ -21,14 +23,8 @@ import java.util.List;
 
 public class Main2 extends LinearOpMode { 
 
-    /* Declare OpMode members. */
     HardwarePushbot robot           = new HardwarePushbot();   // Use a Pushbot's hardware
-    double          clawOffset      = 0;                       // Servo mid position
-    final double    CLAW_SPEED      = 0.02 ;                   // sets rate to move servo
     private ElapsedTime     runtime = new ElapsedTime();
-
-    double speedMultiplier = 1.0;
-    double turningMultiplier = 0.7;
     
     //SENSITIVITY FORMULA: ROTATION_COEFFICIENT * (JOYSTICK ^ ROTATION_EXPONENT) + ROTATION_OFFSET;
     //Remember that JOYSTICK is always clamped from -1 to 1
@@ -42,24 +38,80 @@ public class Main2 extends LinearOpMode {
     public static final double FB_EXPONENT = 2.5;
     public static final double FB_COEFFICIENT = 0.6;
     public static final double FB_OFFSET = 0.02;
-
-    //ARM TICK BOUNDS 
-    public static final int ARM_MOTOR_UPPER_BOUNDS = -100000000;
-    public static final int ARM_MOTOR_LOWER_BOUNDS = 100000000;
     
-    //ARM CLAMPED MAX VELOCITY IN TICKS/S (LINEAR)
-    public static final int ARM_MOTOR_MAX_VELOCITY = 600;
+    //MAX VERTICAL SLIDER VELOCITY IN TICKS/S
+    public static final int MAX_VERTICAL_SLIDER_VELOCITY = 400;
+    //HORIZONTAL SLIDER VELOCITY
+    public static final int HORIZONTAL_SLIDER_VELOCITY = 500;
     
-    //The delay before an arm position is saved after arm controls are released.
-    //this is to prevent the arm from going back to the position controls were released after 
-    //it overshoots that target, since the motor will always coast a little even after controls being released
-    //This might not be necessary due to the weight of the arm.
-    public static final double ARM_SET_IDLE_DELAY_SECONDS = 0.2;
+    //SLIDER LIMITS
+    public static final int HORIZONTAL_SLIDER_LIMIT = -415;
+    public static final int VERTICAL_SLIDER_LIMIT = 430;
     
-    class GamepadCustom extends Gamepad{
-        public GamepadCustom(){
-            joystickDeadzone = 0f;
-        } 
+    public static final int VERTICAL_SLIDER_ARM_CLEAR_TOP_MIN_LIMIT = 210;
+    public static final int HORIZONTAL_SLIDER_END_THRESHOLD = 35;
+    public static final int BUCKET_CLEAR_CHASSIS_MIN_LIMIT = 350;
+    //BUCKET SERVO LIMITS
+    public static final double BUCKET_ARM_LIMIT = 1.0d;
+    public static final double BUCKET_SWIVEL_OFFSET_LIMIT = 1.0d;
+    public static final double BUCKET_ARM_MIN_LIMIT = 0.08d;
+    public static final double BUCKET_SWIVEL_OFFSET_MIN_LIMIT = -1.0d;
+    //BUCKET SPEEDS
+    public static final double BUCKET_SWIVEL_SPEED = 0.010d;
+    public static final double BUCKET_ARM_SPEED = 0.010d;
+    
+    public static final double BUCKET_SWIVEL_INTAKE_POS = 0.830;
+    
+    //180 degrees: 0.9588888888
+    //0.64 ticks per 180
+    public static final double SERVO_ROTATION_PER_180 = 0.64;
+    //(RELATIVE TO GROUND) when the arm and swivel are both facing outwards parallel to the ground.
+    public static final double BUCKET_SWIVEL_LEVEL_POS = 0.74055;
+    public static final double BUCKET_ARM_LEVEL_POS = 0.322777;
+    
+    //Starting positions for stuff
+    public static final int HORIZONTAL_SLIDER_START_POS = -200;
+    public static final int VERTICAL_SLIDER_START_POS = 220;
+    public static final double BUCKET_ARM_START_POS = BUCKET_ARM_MIN_LIMIT;
+    public static final double BUCKET_SWIVEL_START_POS = BUCKET_SWIVEL_INTAKE_POS;
+    
+    //arm, slider, and swivel angles according to level for ejection
+    public static final double BUCKET_SWIVEL_ANGLE_L1 = -165;
+    public static final double BUCKET_ARM_POS_L1 = 1;
+    public static final int VERTICAL_SLIDER_POS_L1 = 0;
+    public static final double BUCKET_SWIVEL_ANGLE_L2 = -165;
+    public static final double BUCKET_ARM_POS_L2 = 1;
+    public static final int VERTICAL_SLIDER_POS_L2 = 270;
+    public static final double BUCKET_SWIVEL_ANGLE_L3 = -165;
+    public static final double BUCKET_ARM_POS_L3 = 0.85;
+    public static final int VERTICAL_SLIDER_POS_L3 = 370;
+    
+    
+    //RELATIVE TO GROUND
+    public double getBucketArmAngle(){
+        return ((robot.bucketArm.getPosition() - BUCKET_ARM_LEVEL_POS) / SERVO_ROTATION_PER_180) * 180d;
+    }
+    //RELATIVE TO PARALLEL TO ARM
+    public double getBucketSwivelAngle(){
+        return ((robot.bucketSwivel.getPosition() - BUCKET_SWIVEL_LEVEL_POS) / SERVO_ROTATION_PER_180) * 180d;
+    }
+    public double bucketArmPosToAngle(double pos){
+        return ((pos - BUCKET_ARM_LEVEL_POS) / SERVO_ROTATION_PER_180) * 180d;
+    }
+    public double bucketSwivelPosToAngle(double pos){
+        return ((pos - BUCKET_SWIVEL_LEVEL_POS) / SERVO_ROTATION_PER_180) * 180d;
+    }
+    public double angleToBucketArmPos(double angle){
+        return ((SERVO_ROTATION_PER_180 * angle) / 180d) + BUCKET_ARM_LEVEL_POS;
+    }
+    public double angleToBucketSwivelPos(double angle){
+        return ((SERVO_ROTATION_PER_180 * angle) / 180d) + BUCKET_SWIVEL_LEVEL_POS;
+    }
+    
+    enum AssistState{
+        Collecting, //lower the scoop to pick a block up
+        Delivering, //position the arm to drop off at the tower 
+        Standby
     }
     
     @Override
@@ -68,341 +120,427 @@ public class Main2 extends LinearOpMode {
         GamepadCustom gamepad = new GamepadCustom();
         gamepad1 = gamepad;
         
-        double left;
-        double right;
-        double drive;
-        double turn;
-        double max;
-        
-        robot.init(hardwareMap);
-        
-
-        /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
-         */
+        //you gotta have this here
         robot.init(hardwareMap);
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Say", "Hello Driver");    //
         telemetry.update();
         
-        //INITIALIZE THE MOTORS
-        resetMotors();
-        runMotorsWithEncodersAndReset(); //DEBUG; COMMENT OUT WHEN NECESSARY
-
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
+        //Initialize drive motors
+        resetDriveMotors();
         
-        //boolean flag for arm idle position and the idle position
-        boolean setIdlePosOnce = false;
-        boolean recordedArmControlReleaseTime = false;
-        int idlePosL = 0, idlePosR = 0;
-        double armReleasedTime = 0;
-        int armLevel = 1;
+        //some flag booleans for controller usability
         boolean m_dpadDown = false;
         boolean m_dpadUp = false;
+        boolean m_startDown = false;
+        
+        boolean m_switchedLevelMode = false;
+        double lastTimeDpadDown = 0.0d;
+        
+        //for assist mode
+        boolean m_lowering = false; 
+        
+        //initial variables for bucket 
+        double bucketArmTarget = BUCKET_ARM_START_POS;
+        double bucketSwivelTargetOffset = BUCKET_SWIVEL_START_POS;
+        
+        //for horizontal slider
+        int horizontalTarget = 0;
+        
+        //initial variables for driving mecanum wheels
+        double left;
+        double right;
+        double drive = 0;
+        double turn = 0;
+        double strafe = 0;
+        
+        //assist on/off
+        //false = automatic arm/bucket levels, automatic slider movement from rear to front
+        //true = manual control 
+        boolean manual = false; 
+        AssistState assistState = AssistState.Standby;
+        
+        //target level for automatic level selection 
+        int targetLevel = 3;
         boolean usingArmLevels = false;
+        
+        //starting positions for sliders and bucket and arm 
+        //also set some motors to run to position
+        robot.bucketArm.setPosition(BUCKET_ARM_START_POS);
+        robot.bucketSwivel.setPosition(BUCKET_SWIVEL_START_POS);
+        
+        setVerticalSliderPos(VERTICAL_SLIDER_START_POS, 400);
+        /* while(robot.verticalSlider.getCurrentPosition() < 200){ //wait for vert slider to go up
+            telemetry.addData("target: ", robot.verticalSlider.getTargetPosition());
+            telemetry.update();
+        } */
+        
+        setHorizontalSliderPos(HORIZONTAL_SLIDER_START_POS, 400);
+        
+        // Wait for the game to start (driver presses PLAY)
+        //MAKE SURE THIS IS THE LAST STATEMENT (else code before loop won't execute)
+        waitForStart();
+        
         while (opModeIsActive()) {
 
             // Run wheels in POV mode (note: The joystick goes negative when pushed forwards, so negate it)
             // In this mode the Left stick moves the robot fwd and back, the Right stick turns left and right.
             // This way it's also easy to just drive straight, or just turn.
             drive = gamepad1.left_stick_y;
+            strafe = -gamepad1.left_stick_x;
             turn  = gamepad1.right_stick_x;
             
-            
-            
-            
-            //DPAD ARM LEVELS
-            if(!gamepad1.dpad_down){
-                m_dpadDown = false;
-            }
-            if(!gamepad1.dpad_up){
-                m_dpadUp = false;
-            }
-            
-            if(gamepad1.dpad_down && !m_dpadDown){
-                //init arm level to 1 if we weren't using it prior
-                if(!usingArmLevels){
-                    setArmLevel(1, 200);
+            if(gamepad1.start){
+                if(!m_startDown){
+                    if(manual == true) manual = false;
+                    else if (manual == false) manual = true; 
                 }
+                m_startDown = true;
+            } else m_startDown = false;
+            
+            if(manual){
+                if(gamepad1.left_bumper){
+                    horizontalTarget = 0;
+                    setHorizontalSliderPos(horizontalTarget, HORIZONTAL_SLIDER_VELOCITY);
+                }
+                else if(gamepad1.right_bumper){
+                    horizontalTarget = HORIZONTAL_SLIDER_LIMIT;
+                    setHorizontalSliderPos(horizontalTarget, HORIZONTAL_SLIDER_VELOCITY);
+                } else {
+                    robot.horizontalSlider.setVelocity(0);
+                }
+            }
+            else {
+                if(gamepad1.left_bumper){
+                    assistState = AssistState.Collecting;
+                    resetAssistFlags();
+                    usingArmLevels = false; 
+                    m_lowering = false; //DEBUG
+                }
+                else if(gamepad1.right_bumper){
+                    assistState = AssistState.Delivering;
+                    resetAssistFlags();
+                    m_lowering = false; //DEBUG
+                }
+                if(assistState == AssistState.Standby)
+                    setHorizontalSliderPos(horizontalTarget, HORIZONTAL_SLIDER_VELOCITY);
+            }
+            
+            int verticalSliderVelocity = 0;
+            int verticalTarget = 0;
+            if(gamepad1.right_trigger > 0){ //move it down
+                verticalSliderVelocity -= Math.round((double)MAX_VERTICAL_SLIDER_VELOCITY *  gamepad1.right_trigger);
+                verticalTarget = VERTICAL_SLIDER_LIMIT;
+                usingArmLevels = false; 
+            }
+            else if(gamepad1.left_trigger > 0){ //move it up
+                verticalSliderVelocity += Math.round((double)MAX_VERTICAL_SLIDER_VELOCITY *  gamepad1.left_trigger);
+                verticalTarget= 0;
+                usingArmLevels = false; 
+            }
+            if(assistState == AssistState.Standby && !usingArmLevels)
+                setVerticalSliderPos(verticalTarget, verticalSliderVelocity);
+            
+            //change the bucket arm target position (pay attention: this is not the only code manipulating them)
+            if(gamepad1.dpad_left){
+                if(bucketArmTarget > BUCKET_ARM_MIN_LIMIT)
+                    bucketArmTarget -= BUCKET_ARM_SPEED;
+                else if (bucketArmTarget < BUCKET_ARM_MIN_LIMIT)
+                    bucketArmTarget = BUCKET_ARM_MIN_LIMIT;
                 
-                m_dpadDown = true;
-                if(armLevel > 1){
-                    armLevel--;
-                }
-                usingArmLevels = true;
-                setArmLevel(armLevel, 200);
+                usingArmLevels = false;
             }
-
-            if(gamepad1.dpad_up && !m_dpadUp){
-                //init arm level to 1 if we weren't using it prior
-                if(!usingArmLevels){
-                    setArmLevel(1, 200);
-                }
-
-                m_dpadUp = true;
-                if(armLevel < 3){
-                    armLevel++;
-                }
-                usingArmLevels = true;
-                setArmLevel(armLevel, 200);
+            if(gamepad1.dpad_right){
+                if(bucketArmTarget < BUCKET_ARM_LIMIT)
+                    bucketArmTarget += BUCKET_ARM_SPEED;
+                else if (bucketArmTarget > BUCKET_ARM_LIMIT)
+                    bucketArmTarget = BUCKET_ARM_LIMIT;
+                
+                usingArmLevels = false;
             }
             
-            
-            telemetry.addData("Arm target level: ", armLevel);
-            telemetry.addData("Using arm levels: ", usingArmLevels);
-            
-            //intake
-            if (gamepad1.left_bumper){
-                intakeVelocity(-340);
+            if(usingArmLevels && assistState == AssistState.Standby){
+                if(getBucketArmAngle() < 90d && !canClearVerticalSlider()){
+                    setVerticalSliderPos(VERTICAL_SLIDER_ARM_CLEAR_TOP_MIN_LIMIT + 20, MAX_VERTICAL_SLIDER_VELOCITY);
+                } else {
+                    if(targetLevel == 1){
+                    bucketArmTarget = BUCKET_ARM_POS_L1;
+                    //robot.bucketArm.setPosition(bucketArmTarget);
+                    robot.bucketSwivel.setPosition(angleToBucketSwivelPos(BUCKET_SWIVEL_ANGLE_L1));
+                    setVerticalSliderPos(VERTICAL_SLIDER_POS_L1, MAX_VERTICAL_SLIDER_VELOCITY);
+                    }
+                    if(targetLevel == 2){
+                        bucketArmTarget = BUCKET_ARM_POS_L2;
+                        //robot.bucketArm.setPosition(bucketArmTarget);
+                        robot.bucketSwivel.setPosition(angleToBucketSwivelPos(BUCKET_SWIVEL_ANGLE_L2));
+                        setVerticalSliderPos(VERTICAL_SLIDER_POS_L2, MAX_VERTICAL_SLIDER_VELOCITY);
+                    }
+                    if(targetLevel == 3){
+                        bucketArmTarget = BUCKET_ARM_POS_L3;
+                        //robot.bucketArm.setPosition(bucketArmTarget);
+                        robot.bucketSwivel.setPosition(angleToBucketSwivelPos(BUCKET_SWIVEL_ANGLE_L3));
+                        setVerticalSliderPos(VERTICAL_SLIDER_POS_L3, MAX_VERTICAL_SLIDER_VELOCITY);
+                    }
+                }
             }
-            else if (gamepad1.right_bumper){
-                intakeVelocity(4000);
+            
+            //prevent the bucket arm from hitting the vertical slider riser by limiting arc
+            if(!canClearVerticalSlider()){
+                if(getBucketArmAngle() < 90d && bucketArmPosToAngle(bucketArmTarget) > 55d){
+                    bucketArmTarget = angleToBucketArmPos(55d);
+                } else if(getBucketArmAngle() > 90d && bucketArmPosToAngle(bucketArmTarget) < 105d){
+                    bucketArmTarget = angleToBucketArmPos(105d);
+                }
+            }
+            
+            //the bucket must also swivel to keep a constant level if the arm moves (related Z-angles)
+            double relativeBucketPosOffset = getRelativeBucketPosOffset();
+            //QOL; since the sum of the constant angle offset and target offset can be more than 1, this causes
+            //the target sum to be more than 1 and cause controls to be weird
+            double availableSwivelRange = 1.0d - relativeBucketPosOffset;
+            double availableSwivelRangeNegative = -relativeBucketPosOffset;
+            
+            //you can adjust the bucket swivel in manual mode OR when the bucket is on the rear
+            //side of the bot 
+            //otherwise, it adjusts the target level 
+            if(manual || getBucketArmAngle() < 90d){
+                usingArmLevels = false; 
+                if(gamepad1.dpad_down){
+                if(bucketSwivelTargetOffset > BUCKET_SWIVEL_OFFSET_MIN_LIMIT)
+                    bucketSwivelTargetOffset -= BUCKET_SWIVEL_SPEED;
+                else if (bucketSwivelTargetOffset < BUCKET_SWIVEL_OFFSET_MIN_LIMIT)
+                    bucketSwivelTargetOffset = BUCKET_SWIVEL_OFFSET_MIN_LIMIT;
+                }
+                if(gamepad1.dpad_up){
+                    if(bucketSwivelTargetOffset < BUCKET_SWIVEL_OFFSET_LIMIT)
+                        bucketSwivelTargetOffset += BUCKET_SWIVEL_SPEED;
+                    else if (bucketSwivelTargetOffset > BUCKET_SWIVEL_OFFSET_LIMIT)
+                        bucketSwivelTargetOffset = BUCKET_SWIVEL_OFFSET_LIMIT;
+                } 
             } else {
-                intakeVelocity(0);
-            } 
+                if(!gamepad1.dpad_down) m_dpadDown = false;
+                if(!gamepad1.dpad_up) m_dpadUp = false;
+                
+                if(!m_dpadDown && gamepad1.dpad_down){
+                    targetLevel--;
+                    if(targetLevel < 1) targetLevel = 1;
+                    usingArmLevels = true; 
+                    m_dpadDown = true;
+                }
+                else if(!m_dpadUp && gamepad1.dpad_up){
+                    targetLevel++;
+                    if(targetLevel > 3) targetLevel = 3;
+                    usingArmLevels = true; 
+                    m_dpadUp = true;
+                }
+            }
+            
+            //also prevent the bucket from catching on chassis, preventing the horizontal slider from moving
+            int horizontalSliderTarget = robot.horizontalSlider.getTargetPosition();
+            int horizontalSliderPos = robot.horizontalSlider.getCurrentPosition();
+            //if the horizontal slider's current position is not within defined threshold ticks of target
+            if(Math.abs(horizontalSliderTarget) - horizontalSliderPos > HORIZONTAL_SLIDER_END_THRESHOLD){ 
+                //we can skip this if vert slider is already high enough 
+                if(robot.verticalSlider.getCurrentPosition() < BUCKET_CLEAR_CHASSIS_MIN_LIMIT) {
+                   if(getBucketArmAngle() < 0d){
+                        bucketArmTarget = angleToBucketArmPos(0d);
+                    } else if(getBucketArmAngle() > 180d){
+                        bucketArmTarget = angleToBucketArmPos(180d);
+                    } 
+                }
+            }
+            
+            //finally set the arm position
+            if(assistState == AssistState.Standby)
+                robot.bucketArm.setPosition(bucketArmTarget);
+            
+            //refer to comments above the two if blocks; limits the target offset
+            if(bucketSwivelTargetOffset > availableSwivelRange) bucketSwivelTargetOffset = availableSwivelRange;
+            if(bucketSwivelTargetOffset < availableSwivelRangeNegative) bucketSwivelTargetOffset = availableSwivelRangeNegative;
+            
+            //Actions in assist mode happens here
+            if(!manual){
+                if(assistState == AssistState.Collecting){
+                    //if the vertical slider isn't high enough, move it up 
+                    if((!canClearVerticalSlider() || !canClearChassis()) && !m_lowering) 
+                        setVerticalSliderPos(BUCKET_CLEAR_CHASSIS_MIN_LIMIT, MAX_VERTICAL_SLIDER_VELOCITY);
+                    else { //once it's high enough, move it to the back (intake)
+                        horizontalTarget = 0; 
+                        setHorizontalSliderPos(0, HORIZONTAL_SLIDER_VELOCITY); 
+                    }
+                    
+                    //if near the end and the previous steps are complete, put the arm in the position
+                    if(Math.abs(horizontalSliderTarget) - horizontalSliderPos < HORIZONTAL_SLIDER_END_THRESHOLD)
+                    {
+                        m_lowering = true;
+                        robot.bucketArm.setPosition(BUCKET_ARM_MIN_LIMIT);
+                        bucketArmTarget = BUCKET_ARM_MIN_LIMIT;
+                        robot.bucketSwivel.setPosition(BUCKET_SWIVEL_INTAKE_POS);
+                        if(getBucketArmAngle() < 90d) //wait until the arm rotates over before it starts going down 
+                            setVerticalSliderPos(0, MAX_VERTICAL_SLIDER_VELOCITY);
+                        //go back to regular controls once the bucket has been lowered 
+                        if(robot.verticalSlider.getCurrentPosition() < 30)
+                            assistState = AssistState.Standby;
+                    }
+                }
+                if(assistState == AssistState.Delivering){
+                    //if the vertical slider isn't high enough, move it up 
+                    if((!canClearVerticalSlider() || !canClearChassis()) ) 
+                        setVerticalSliderPos(BUCKET_CLEAR_CHASSIS_MIN_LIMIT + 15, MAX_VERTICAL_SLIDER_VELOCITY);
+                    else{
+                       //once it's high enough, move it to the front and move the arms to corresponding level 
+                        horizontalTarget = HORIZONTAL_SLIDER_LIMIT; //this has gotta be here to prevent it from moving back
+                        setHorizontalSliderPos(HORIZONTAL_SLIDER_LIMIT, HORIZONTAL_SLIDER_VELOCITY);  
+                        targetLevel = 3; 
+                        usingArmLevels = true; 
+                    }  
+                    //if near the end and the previous steps are complete, put the arm in the position
+                    //note that this uses HORIZONTAL_SLIDER_LIMIT instead of horizontalTarget otherwise
+                    //it'd just prematurely end the AssistState because the horizontal target hasn't
+                    //been set, is at 0, and 0 is within 30 of 0, meaning this if block would trigger before
+                    //anything has actually been done...
+                    if(Math.abs(HORIZONTAL_SLIDER_LIMIT) - Math.abs(horizontalSliderPos) < HORIZONTAL_SLIDER_END_THRESHOLD)
+                    {
+                        assistState = AssistState.Standby;
+                    }
+                }
+            }
+            
+            //finally set the bucket position
+            robot.bucketSwivel.setPosition(getRelativeBucketPosOffset() + bucketSwivelTargetOffset);
+            
+            //resets tick values in case starting positions are messed up 
+            if(gamepad1.left_stick_button && gamepad1.right_stick_button){
+                resetSliderMotors();
+                resetDriveMotors();
+            }
+            
+            telemetry.addData("Bucket arm target: ", bucketArmTarget);
+            telemetry.addData("Bucket swivel target: ", bucketSwivelTargetOffset);
+            telemetry.addData("Bucket arm position: ", robot.bucketArm.getPosition());
+            telemetry.addData("Bucket swivel position: ", robot.bucketSwivel.getPosition());
+            telemetry.addData("Bucket arm angle: ", getBucketArmAngle());
+            telemetry.addData("Bucket swivel angle: ", getBucketSwivelAngle());
+            telemetry.addData("Bucket swivel relative target: ", relativeBucketPosOffset);
+            telemetry.addData("Bucket swivel target sum: ", relativeBucketPosOffset + bucketSwivelTargetOffset);
+            
+            telemetry.addData("Horizontal slider target: ", robot.horizontalSlider.getTargetPosition());
+            telemetry.addData("Vertical slider target: ", robot.verticalSlider.getTargetPosition());
+            telemetry.addData("Horizontal slider position: ", robot.horizontalSlider.getCurrentPosition());
+            telemetry.addData("Vertical slider position: ", robot.verticalSlider.getCurrentPosition());
+            telemetry.addData("Manual: ", manual);
+            telemetry.addData("DEBUG m_lowering", m_lowering);
+            if(!manual){
+                telemetry.addData("Current AssistState: ", assistState);    
+                telemetry.addData("Using arm levels: ", usingArmLevels);   
+                telemetry.addData("Current target level: ", targetLevel);    
+            }
+            
+            //telemetry.addData("algebruh: ", bucketArmPosToAngle(angleToBucketArmPos(90d)));
             
             if(gamepad1.x){
-                robot.duckMotor.setPower(1);
-            } else 
-                robot.duckMotor.setPower(0);
-            
-            //UP
-            if(gamepad1.left_trigger > 0 && !(gamepad1.right_trigger > 0)){
-                robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                usingArmLevels = false;
-                setIdlePosOnce = false;
-                recordedArmControlReleaseTime = false;
+                //robot.duckMotor.setPower(1);
+            } else {}
+                //robot.duckMotor.setPower(0);
                 
-                robot.armMotorL.setTargetPosition(ARM_MOTOR_UPPER_BOUNDS);
-                robot.armMotorL.setVelocity(gamepad1.left_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
-                
-                robot.armMotorR.setTargetPosition(ARM_MOTOR_UPPER_BOUNDS);
-                robot.armMotorR.setVelocity(gamepad1.left_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
-            } 
-            //DOWN
-            else if(gamepad1.right_trigger > 0 && !(gamepad1.left_trigger > 0)){
-                robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                usingArmLevels = false;
-                setIdlePosOnce = false;
-                recordedArmControlReleaseTime = false;
-                
-                robot.armMotorL.setTargetPosition(ARM_MOTOR_LOWER_BOUNDS);
-                robot.armMotorL.setVelocity(-gamepad1.right_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
-                
-                robot.armMotorR.setTargetPosition(ARM_MOTOR_LOWER_BOUNDS);
-                robot.armMotorR.setVelocity(-gamepad1.right_trigger / 1 * ARM_MOTOR_MAX_VELOCITY);
-                
-            } else if(!usingArmLevels) { //IDLE AND STAY
-            
-                if(!recordedArmControlReleaseTime){
-                    armReleasedTime = runtime.seconds();
-                    recordedArmControlReleaseTime = true;
-                }
-            
-                if(!setIdlePosOnce && ((runtime.seconds() - armReleasedTime) > ARM_SET_IDLE_DELAY_SECONDS)){
-                    idlePosL = robot.armMotorL.getCurrentPosition();
-                    idlePosR = robot.armMotorR.getCurrentPosition();
-                    setIdlePosOnce = true;
-                }
-                
-                robot.armMotorL.setTargetPosition(idlePosL);
-                robot.armMotorL.setVelocity(ARM_MOTOR_MAX_VELOCITY);    
-                robot.armMotorR.setTargetPosition(idlePosR);
-                robot.armMotorR.setVelocity(ARM_MOTOR_MAX_VELOCITY);
+            if(gamepad1.y){
+                robot.intake.setPower(1);
+                robot.intake.setDirection(CRServo.Direction.FORWARD);
+            } else if (gamepad1.a){
+                robot.intake.setPower(1);
+                robot.intake.setDirection(CRServo.Direction.REVERSE);
+            } else {
+                robot.intake.setPower(0);
             }
-
-            drive(drive, turn);
+            
+            mecanumDrive_Cartesian(strafe, drive, turn);
+            //drive(drive, turn);
             telemetry.update();
-            }
         }
-        
+    }
     
-        
-        
-    public void drive(double y, double rotation)
+    double getRelativeBucketPosOffset(){
+        return angleToBucketSwivelPos(-getBucketArmAngle());
+    }
+    
+    void resetAssistFlags(){
+        boolean m_lowering = false; 
+    }
+
+    public void mecanumDrive_Cartesian(double x, double y, double rotation)
     {
         double wheelSpeeds[] = new double[4];
-        
-        //ROTATION
-        double rotationOffset = 0;
-        if(rotation != 0){
-            rotationOffset = ROTATION_OFFSET;
-        }
-        
-        double fb = y;
-        
-        int positiveOrNegative = 0;
-        if(rotation < 0)
-            positiveOrNegative = -1;
-        else if(rotation > 0)
-            positiveOrNegative = 1; 
-        
-        rotation = positiveOrNegative * (ROTATION_COEFFICIENT * Math.pow(Math.abs(rotation), ROTATION_EXPONENT) + rotationOffset);
-        telemetry.addData("Rotation power: ", rotation);
-        
-        //FRONT/BACK
-        double fbOffset = 0;
-        if(y != 0) fbOffset = FB_OFFSET;
-        
-        int positiveOrNegativeFB = 0;
-        if(y < 0)
-            positiveOrNegativeFB = -1;
-        else if(y > 0)
-            positiveOrNegativeFB = 1; 
-        
-        fb = positiveOrNegativeFB * (FB_COEFFICIENT * Math.pow(Math.abs(fb), FB_EXPONENT) + fbOffset);
-        
-        telemetry.addData("FB power: ", fb);
     
-        wheelSpeeds[0] = fb - rotation;
-        wheelSpeeds[1] = fb + rotation;
-        wheelSpeeds[2] = fb - rotation;
-        wheelSpeeds[3] = fb + rotation;
+        wheelSpeeds[0] = x + y - rotation;
+        wheelSpeeds[1] = -x + y + rotation;
+        wheelSpeeds[2] = -x + y - rotation;
+        wheelSpeeds[3] = x + y + rotation;
     
-        //normalize(wheelSpeeds);
-        //reduceSpeeds(wheelSpeeds, speedMultiplier);
-    
-        robot.frontLeft.setPower(-wheelSpeeds[0]); //FL
-        robot.frontRight.setPower(wheelSpeeds[1]); //FR
-        robot.backLeft.setPower(-wheelSpeeds[2]); //BL
-        robot.backRight.setPower(wheelSpeeds[3]); //BR
-        
-        
+        robot.frontLeft.setPower(-wheelSpeeds[0]);
+        robot.frontRight.setPower(wheelSpeeds[1]);
+        robot.backLeft.setPower(-wheelSpeeds[2]);
+        robot.backRight.setPower(wheelSpeeds[3]);
     
         telemetry.addData("front Left", robot.frontLeft.getPower());
         telemetry.addData("front Right", robot.frontRight.getPower());
         telemetry.addData("back Left", robot.backLeft.getPower());
         telemetry.addData("back Right", robot.backRight.getPower());
-        //telemetry.addData("speedMultiplier", speedMultiplier);
-        telemetry.addData("arm motor L position: ", robot.armMotorL.getCurrentPosition());
-        telemetry.addData("frontLeft motor position:", robot.frontLeft.getCurrentPosition());
-        telemetry.addData("backRight motor position:", robot.backRight.getCurrentPosition());
-        telemetry.addData("(FL - BR)(Forward/back): ", robot.frontLeft.getCurrentPosition() + robot.backRight.getCurrentPosition());
-        
+        telemetry.update();
     
-    }   //end drive
-
-    private void reduceSpeeds(double[] wheelSpeeds, double multiplier){
-        for (int i = 0; i < wheelSpeeds.length; i ++){
-            wheelSpeeds[i] = wheelSpeeds[i] * multiplier;
-        }
-    }
+    }   //end mecanumDrive_Cartesian
     
-    public void setArmLevel(int level, int ticksVelocity){
-        
-        int targetPos = 0;
-        if(level == 1){
-            targetPos = -41;
-        }
-        if(level == 2){
-            targetPos = -71;
-        }
-        if(level == 3){
-            targetPos = -100;
-        }
-        
-        robot.armMotorL.setTargetPosition(targetPos);
-        robot.armMotorR.setTargetPosition(targetPos);
-        
-        robot.armMotorL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.armMotorR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        
-        robot.armMotorL.setVelocity(ticksVelocity);
-        robot.armMotorR.setVelocity(ticksVelocity);
-    }
-    
-    public void intakePower(double power) {
-        robot.intakeMotor.setPower(power);
+    public void setHorizontalSliderPos(int position, int ticksVelocity){
+        robot.horizontalSlider.setTargetPosition(position);
+        robot.horizontalSlider.setVelocity(ticksVelocity);
+        robot.horizontalSlider.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+    } 
+    public void setVerticalSliderPos(int position, int ticksVelocity){
+        robot.verticalSlider.setTargetPosition(position);
+        robot.verticalSlider.setVelocity(ticksVelocity);
+        robot.verticalSlider.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
     } 
     
-    public void intakeVelocity(int ticksVelocity){
-        robot.intakeMotor.setVelocity(ticksVelocity);
+    private void resetSliderMotors(){
+        robot.horizontalSlider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.verticalSlider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
-
-    private void resetMotors(){
+    
+    boolean canClearVerticalSlider(){
+        return robot.verticalSlider.getCurrentPosition() > VERTICAL_SLIDER_ARM_CLEAR_TOP_MIN_LIMIT;
+    }
+    
+    boolean canClearChassis(){
+        return BUCKET_CLEAR_CHASSIS_MIN_LIMIT < robot.verticalSlider.getCurrentPosition();
+    }
+    
+    private void resetDriveMotors(){
         robot.frontLeft.setPower(0);
         robot.frontRight.setPower(0);
         robot.backLeft.setPower(0);
         robot.backRight.setPower(0);
-        robot.armMotorL.setPower(0);
-        robot.armMotorR.setPower(0);
+        
+        robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         
         robot.frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        robot.armMotorL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        robot.armMotorR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         
         // reset target positions
         robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
         robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
         robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
         robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
-        robot.armMotorL.setTargetPosition(robot.armMotorL.getCurrentPosition());
-        robot.armMotorR.setTargetPosition(robot.armMotorR.getCurrentPosition());
+    }
+    
+    class GamepadCustom extends Gamepad{
+        public GamepadCustom(){
+            joystickDeadzone = 0f;
+        } 
     }
 
-    public void runMotorsWithEncodersAndReset(){
-        robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        robot.backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        robot.backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        robot.armMotorL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        robot.armMotorR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        
-        // reset target positions
-        robot.frontLeft.setTargetPosition(robot.frontLeft.getCurrentPosition());
-        robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
-        robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
-        robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
-        robot.armMotorL.setTargetPosition(robot.armMotorL.getCurrentPosition());
-        robot.armMotorR.setTargetPosition(robot.armMotorR.getCurrentPosition());
-        
-        robot.frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        robot.frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        robot.backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        robot.backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        robot.armMotorL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        robot.armMotorR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    } 
-    
-    
-    
-    
-
-    /* private double reduceRotation(double rotation){
-        return rotation * turningMultiplier; 
-    } */
-
-
-// private void normalize(double[] wheelSpeeds)
-// {
-//     double maxMagnitude = Math.abs(wheelSpeeds[0]);
-
-//     for (int i = 1; i < wheelSpeeds.length; i++)
-//     {
-//         double magnitude = Math.abs(wheelSpeeds[i]);
-
-//         if (magnitude > maxMagnitude)
-//         {
-//             maxMagnitude = magnitude;
-//         }
-//     }
-
-//     if (maxMagnitude > 1.0)
-//     {
-//         for (int i = 0; i < wheelSpeeds.length; i++)
-//         {
-//             wheelSpeeds[i] /= maxMagnitude;
-//         }
-//     }
-// }   //normalize
 }//end class
-
-
-

@@ -1,6 +1,8 @@
+/*
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.Random;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
@@ -25,7 +27,7 @@ public class AutoFunctionLib extends LinearOpMode {
     //approximate ticks to traverse length (DRIVE): basically 
     public static final double TICKS_PER_METER_FB = 1313;
     
-    public static final double CAMERA_SCAN_SECONDS = 2d;
+    public static final double CAMERA_SCAN_SECONDS = 1.4d;
     
     //at least this many wheels have to be idle for the wheelsAreBusy() to be true.
     public static final int WHEELS_IDLE_MIN_COUNT = 3;
@@ -112,7 +114,11 @@ public class AutoFunctionLib extends LinearOpMode {
                     telemetry.addData("Randint: ", randint);
                     telemetry.update();
                 }
-                sleep(1000); //wait 3 seconds
+                stopTime = runtime.seconds();
+                while(runtime.seconds() - stopTime < 1.1d){
+                    telemetry.addData("Spinning duck wheel... ", runtime.seconds() - stopTime);
+                    telemetry.update();
+                }
                 duckMotor(0); //shut off duck wheel
                 flag1 = true;
             }
@@ -120,7 +126,7 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //2.1: drive forwards and align with first marker
             if(!flag2 && !wheelsAreBusy()){
-                moveTickFB(-285, 250);
+                moveTickFB(-265, 450);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", "2.1: aligning");
                     telemetry.addData("Randint: ", randint);
@@ -172,7 +178,7 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //2.2: drive forwards and align with second marker
             if(!flag10 && !wheelsAreBusy() && !duckFound){
-                moveTickFB(-285, 250);
+                moveTickFB(-265,450);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", "2.2: aligning");
                     telemetry.addData("Duck found: ", duckFound);
@@ -224,7 +230,7 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //2.3: drive forwards and align with third marker
             if(!flag12 && !wheelsAreBusy() && !duckFound){
-                moveTickFB(-285, 250);
+                moveTickFB(-265, 450);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", "2.3: aligning");
                     telemetry.addData("Duck found: ", duckFound);
@@ -278,16 +284,16 @@ public class AutoFunctionLib extends LinearOpMode {
             if (!flag14 && !wheelsAreBusy()){
                 if(duckFound){
                     if(duckLevel == 1){
-                        moveTickFB(-1200, 400);
+                        moveTickFB(-1200, 650);
                     }
                     if(duckLevel == 2){
-                        moveTickFB(-900, 400);
+                        moveTickFB(-900, 650);
                     }
                     if(duckLevel == 3){
-                        moveTickFB(-600, 400);
+                        moveTickFB(-600, 650);
                     }
                 } else {
-                    moveTickFB(-600, 500);
+                    moveTickFB(-600, 650);
                 }
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", "2.4: aligning for turn");
@@ -316,7 +322,7 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //4: drive towards tower
             if (!flag4 && !wheelsAreBusy()){
-                moveTickFB(-620, 500);
+                moveTickFB(-620, 650);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 4);
                     telemetry.addData("Randint: ", randint);
@@ -363,18 +369,22 @@ public class AutoFunctionLib extends LinearOpMode {
             
             //6: eject item
             if (!flag6 && !wheelsAreBusy()){
-                intakeMotor(-1);
+                intakeVelocity(-295);
                 telemetry.addData("Stage: ", 6);
                 telemetry.update();
-                sleep(1500);
-                intakeMotor(0);
+                stopTime = runtime.seconds();
+                while(runtime.seconds() - stopTime < 1.5d){
+                    telemetry.addData("Ejecting... ", runtime.seconds() - stopTime);
+                    telemetry.update();
+                }
+                intakeVelocity(0);
                 flag6 = true;
             } 
             initWheelMotors();
             
             //7: turn 90 degrees left towards warehouse
             if (!flag7 && !wheelsAreBusy()){
-                rotateOnSpot(-90, 100);
+                rotateOnSpot(-100, 200);
                 while(wheelsAreBusy()){
                     telemetry.addData("Stage: ", 7);
                     telemetry.update();
@@ -401,10 +411,11 @@ public class AutoFunctionLib extends LinearOpMode {
             
         }
     }
-    
+*/
     /**
      * resets motor tick positions and target positions
      */
+/*
     public void initWheelMotors(){
         robot.frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -433,7 +444,8 @@ public class AutoFunctionLib extends LinearOpMode {
         
         return ticksToIncreaseBy;
     }
-    
+*/
+/*
     public void rotateOnSpot(double degrees, double degreesPerSecond){
         
         degrees = -degrees;
@@ -446,8 +458,8 @@ public class AutoFunctionLib extends LinearOpMode {
         if(degrees < 0){
             ticks = -ticks;
         }
-        */
         
+
         robot.frontLeft.setTargetPosition((int)Math.round( robot.frontLeft.getCurrentPosition() + ticks)); 
         robot.frontRight.setTargetPosition((int)Math.round( robot.frontRight.getCurrentPosition() + ticks)); 
         robot.backLeft.setTargetPosition((int)Math.round(robot.backLeft.getCurrentPosition() + ticks)); 
@@ -463,10 +475,10 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.backLeft.setVelocity(velocityTicks);
         robot.backRight.setVelocity(velocityTicks);
         
-    }
+    }*/
     
     //positive ticks for forward, negative ticks for backward
-    public void moveTickFB(int ticks, int velocityTicks){
+    /*public void moveTickFB(int ticks, int velocityTicks){
     
         robot.frontLeft.setTargetPosition(- ticks); //FL
         robot.frontRight.setTargetPosition(ticks); //FR
@@ -500,6 +512,10 @@ public class AutoFunctionLib extends LinearOpMode {
         robot.duckMotor.setPower(power);
     }
     
+    public void intakeVelocity(int ticksVelocity){
+        robot.intakeMotor.setVelocity(ticksVelocity);
+    }
+    
     public boolean wheelsAreBusy(){
         boolean busy = false;
         if(robot.frontLeft.isBusy()) busy = true;
@@ -529,12 +545,9 @@ public class AutoFunctionLib extends LinearOpMode {
         
         robot.armMotorL.setVelocity(ticksVelocity);
         robot.armMotorR.setVelocity(ticksVelocity);
-    }
-    
+    }*/
+    /*
     private void initVuforia() {
-        /*
-         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
-         */
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
@@ -545,10 +558,9 @@ public class AutoFunctionLib extends LinearOpMode {
 
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
     }
-
-    /**
-     * Initialize the TensorFlow Object Detection engine.
-     */
+    */
+    
+    /*
     private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
             "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -561,7 +573,6 @@ public class AutoFunctionLib extends LinearOpMode {
        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
     }
-    
-    
-    
-}
+    */
+//}
+
