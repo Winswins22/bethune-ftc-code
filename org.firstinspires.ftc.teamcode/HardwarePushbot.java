@@ -100,8 +100,8 @@ public class HardwarePushbot
         armServoLeft.setDirection(Servo.Direction.FORWARD);
         armServoRight.setDirection(Servo.Direction.REVERSE);
 
-        armServoLeft.setPosition(1);
-        armServoRight.setPosition(1);
+        armServoLeft.setPosition(0);
+        armServoRight.setPosition(0);
     }
  }
 
