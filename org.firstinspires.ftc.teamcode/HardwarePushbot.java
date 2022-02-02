@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 /**
  * This is NOT an opmode.
@@ -54,14 +55,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class HardwarePushbot
 {
     /* Public OpMode members. */
-    public DcMotorEx  frontLeft  = null;
-    public DcMotorEx  frontRight = null;
-    public DcMotorEx  backLeft   = null;
-    public DcMotorEx  backRight  = null;
+    public DcMotor  frontLeft  = null;
+    public DcMotor  frontRight = null;
+    public DcMotor  backLeft   = null;
+    public DcMotor  backRight  = null;
     public DcMotor  duckWheel    = null;
     public DcMotor intake        = null;
-    public DcMotor arm           = null;
-    public Servo hand            = null;
+    public DcMotor armMotor      = null;
+    public Servo armServoLeft            = null;
+    public Servo armServoRight            = null;
     
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -73,31 +75,33 @@ public class HardwarePushbot
     // }
 
     /* Initialize standard Hardware interfaces */
-    public void init(HardwareMap ahwMap) {
-        // Save reference to Hardware map
-        hwMap = ahwMap;
+    public void init(HardwareMap hwMap) {
 
         // Define and Initialize Motors
-        frontLeft  = hwMap.get(DcMotorEx.class, "LeftFront");
-        frontRight = hwMap.get(DcMotorEx.class, "RightFront");
-        backLeft    = hwMap.get(DcMotorEx.class, "LeftBack");
-        backRight    = hwMap.get(DcMotorEx.class, "RightBack");
+        frontLeft  = hwMap.get(DcMotor.class, "FrontLeft");
+        frontRight = hwMap.get(DcMotor.class, "FrontRight");
+        backLeft    = hwMap.get(DcMotor.class, "BackLeft");
+        backRight    = hwMap.get(DcMotor.class, "BackRight");
         duckWheel = hwMap.get(DcMotor.class, "Duck");
         intake = hwMap.get(DcMotor.class, "Intake");
         //intake = hwMap.StringIndexOutOfBoundsException(DcMotor.class, "intake");
-        arm = hwMap.get(DcMotor.class, "ArmMotor");
-        hand = hwMap.get(Servo.class, "HandServo");
+        armMotor = hwMap.get(DcMotor.class, "ArmMotor");
+        armServoLeft = hwMap.get(Servo.class, "ArmServoLeft");
+        armServoRight = hwMap.get(Servo.class, "ArmServoRight");
         
         // Set to FORWARD or REVERSE depending on motors on robot
-        frontRight.setDirection(DcMotor.Direction.FORWARD); 
-        backRight.setDirection(DcMotor.Direction.FORWARD);
-        frontLeft.setDirection(DcMotor.Direction.REVERSE); 
-        backLeft.setDirection(DcMotor.Direction.FORWARD);
-        duckWheel.setDirection(DcMotor.Direction.REVERSE);
-        intake.setDirection(DcMotor.Direction.FORWARD);
-        arm.setDirection(DcMotor.Direction.FORWARD);
+        frontRight.setDirection(DcMotorSimple.Direction.FORWARD); 
+        backRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE); 
+        backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        duckWheel.setDirection(DcMotorSimple.Direction.REVERSE);
+        intake.setDirection(DcMotorSimple.Direction.FORWARD);
+        armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        armServoLeft.setDirection(Servo.Direction.FORWARD);
+        armServoRight.setDirection(Servo.Direction.REVERSE);
 
-        hand.setPosition(1);
+        armServoLeft.setPosition(1);
+        armServoRight.setPosition(1);
     }
  }
 

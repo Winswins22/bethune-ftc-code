@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "Pushbot: Manual Mode", group = "Linear Opmode")
+@TeleOp(name = "Pushbot: Manual Mode2", group = "Linear Opmode")
 
 public class Main2 extends LinearOpMode {
 
