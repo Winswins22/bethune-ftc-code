@@ -29,15 +29,19 @@ public class Main2 extends LinearOpMode {
     //SENSITIVITY FORMULA: ROTATION_COEFFICIENT * (JOYSTICK ^ ROTATION_EXPONENT) + ROTATION_OFFSET;
     //Remember that JOYSTICK is always clamped from -1 to 1
     //public static final double ROTATION_EXPONENT = 1.75;
-    public static final double ROTATION_EXPONENT = 2.5;
-    public static final double ROTATION_COEFFICIENT = 0.3;
-    public static final double ROTATION_OFFSET = 0.03;
+    public static final double ROTATION_EXPONENT = 2.5d;
+    public static final double ROTATION_COEFFICIENT = 0.45d;
+    public static final double ROTATION_OFFSET = 0.12d;
     
     //Same formula for back or forward
-    //Remember that JOYSTICK is always clamped from -1 to 1
-    public static final double FB_EXPONENT = 2.5;
-    public static final double FB_COEFFICIENT = 0.6;
-    public static final double FB_OFFSET = 0.02;
+    public static final double FB_EXPONENT = 2.5d;
+    public static final double FB_COEFFICIENT = 0.6d;
+    public static final double FB_OFFSET = 0.12d;
+    
+    //Same formula as well
+    public static final double LR_EXPONENT = 5.0d;
+    public static final double LR_COEFFICIENT = 0.5d;
+    public static final double LR_OFFSET = 0.12d;
     
     //MAX VERTICAL SLIDER VELOCITY IN TICKS/S
     public static final int MAX_VERTICAL_SLIDER_VELOCITY = 400;
@@ -54,7 +58,7 @@ public class Main2 extends LinearOpMode {
     //BUCKET SERVO LIMITS
     public static final double BUCKET_ARM_LIMIT = 1.0d;
     public static final double BUCKET_SWIVEL_OFFSET_LIMIT = 1.0d;
-    public static final double BUCKET_ARM_MIN_LIMIT = 0.08d;
+    public static final double BUCKET_ARM_MIN_LIMIT = 0.10d;
     public static final double BUCKET_SWIVEL_OFFSET_MIN_LIMIT = -1.0d;
     //BUCKET SPEEDS
     public static final double BUCKET_SWIVEL_SPEED = 0.010d;
@@ -470,7 +474,38 @@ public class Main2 extends LinearOpMode {
 
     public void mecanumDrive_Cartesian(double x, double y, double rotation)
     {
+        
         double wheelSpeeds[] = new double[4];
+        
+        int positiveOrNegativeRotation = 0;
+        if(rotation < 0)
+            positiveOrNegativeRotation = -1;
+        else if(rotation > 0)
+            positiveOrNegativeRotation  = 1; 
+            
+        int positiveOrNegativeX = 0;
+        if(x < 0)
+            positiveOrNegativeX = -1;
+        else if(x > 0)
+            positiveOrNegativeX  = 1; 
+            
+        int positiveOrNegativeY = 0;
+        if(y < 0)
+            positiveOrNegativeY = -1;
+        else if(y > 0)
+            positiveOrNegativeY  = 1; 
+        
+        //we need these statements otherwise Math.pow() gives us NaN
+        rotation = Math.abs(rotation);
+        x = Math.abs(x);
+        y = Math.abs(y);
+        
+        rotation = (double)positiveOrNegativeRotation * (ROTATION_COEFFICIENT * exp(rotation, ROTATION_EXPONENT) + (rotation>0 ? ROTATION_OFFSET : 0));
+        
+        x = (double)positiveOrNegativeX * (FB_COEFFICIENT * exp(x, FB_EXPONENT) + (x>0 ? FB_OFFSET : 0));    
+        
+        y = (double)positiveOrNegativeY * (LR_COEFFICIENT * exp(y, LR_EXPONENT) + (y>0 ? LR_OFFSET : 0));    
+            
     
         wheelSpeeds[0] = x + y - rotation;
         wheelSpeeds[1] = -x + y + rotation;
@@ -535,6 +570,10 @@ public class Main2 extends LinearOpMode {
         robot.frontRight.setTargetPosition(robot.frontRight.getCurrentPosition());
         robot.backLeft.setTargetPosition(robot.backLeft.getCurrentPosition());
         robot.backRight.setTargetPosition(robot.backRight.getCurrentPosition());
+    }
+    
+    public static double exp(double n, double e){
+        return Math.pow(n, e);
     }
     
     class GamepadCustom extends Gamepad{
