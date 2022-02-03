@@ -30,7 +30,7 @@ public class Main2 extends LinearOpMode {
     //Remember that JOYSTICK is always clamped from -1 to 1
     //public static final double ROTATION_EXPONENT = 1.75;
     public static final double ROTATION_EXPONENT = 2.5d;
-    public static final double ROTATION_COEFFICIENT = 0.45d;
+    public static final double ROTATION_COEFFICIENT = 0.3d;
     public static final double ROTATION_OFFSET = 0.12d;
     
     //Same formula for back or forward
@@ -39,7 +39,7 @@ public class Main2 extends LinearOpMode {
     public static final double FB_OFFSET = 0.12d;
     
     //Same formula as well
-    public static final double LR_EXPONENT = 5.0d;
+    public static final double LR_EXPONENT = 1.0d;
     public static final double LR_COEFFICIENT = 0.5d;
     public static final double LR_OFFSET = 0.12d;
     
@@ -64,7 +64,9 @@ public class Main2 extends LinearOpMode {
     public static final double BUCKET_SWIVEL_SPEED = 0.010d;
     public static final double BUCKET_ARM_SPEED = 0.010d;
     
-    public static final double BUCKET_SWIVEL_INTAKE_POS = 0.830;
+    public static final double BUCKET_SWIVEL_COLLECTING_IDLE_POS = 0.830; //initial pos for collection mode
+    public static final double BUCKET_SWIVEL_INTAKE_ANGLE = 20d; //when the intake is running
+    public static final double BUCKET_ARM_INTAKE_ANGLE = -62d; //when the intake is running
     
     //180 degrees: 0.9588888888
     //0.64 ticks per 180
@@ -77,7 +79,7 @@ public class Main2 extends LinearOpMode {
     public static final int HORIZONTAL_SLIDER_START_POS = -200;
     public static final int VERTICAL_SLIDER_START_POS = 220;
     public static final double BUCKET_ARM_START_POS = BUCKET_ARM_MIN_LIMIT;
-    public static final double BUCKET_SWIVEL_START_POS = BUCKET_SWIVEL_INTAKE_POS;
+    public static final double BUCKET_SWIVEL_START_POS = BUCKET_SWIVEL_COLLECTING_IDLE_POS;
     
     //arm, slider, and swivel angles according to level for ejection
     public static final double BUCKET_SWIVEL_ANGLE_L1 = -165;
@@ -139,8 +141,11 @@ public class Main2 extends LinearOpMode {
         boolean m_dpadUp = false;
         boolean m_startDown = false;
         
-        boolean m_switchedLevelMode = false;
-        double lastTimeDpadDown = 0.0d;
+        //for intake assist 
+        boolean m_intake = false; 
+        
+        //boolean m_switchedLevelMode = false;
+        //double lastTimeDpadDown = 0.0d;
         
         //for assist mode
         boolean m_lowering = false; 
@@ -380,7 +385,7 @@ public class Main2 extends LinearOpMode {
                         m_lowering = true;
                         robot.bucketArm.setPosition(BUCKET_ARM_MIN_LIMIT);
                         bucketArmTarget = BUCKET_ARM_MIN_LIMIT;
-                        robot.bucketSwivel.setPosition(BUCKET_SWIVEL_INTAKE_POS);
+                        robot.bucketSwivel.setPosition(BUCKET_SWIVEL_COLLECTING_IDLE_POS);
                         if(getBucketArmAngle() < 90d) //wait until the arm rotates over before it starts going down 
                             setVerticalSliderPos(0, MAX_VERTICAL_SLIDER_VELOCITY);
                         //go back to regular controls once the bucket has been lowered 
@@ -411,7 +416,39 @@ public class Main2 extends LinearOpMode {
                 }
             }
             
-            //finally set the bucket position
+            if(gamepad1.x){
+                //robot.duckMotor.setPower(1);
+            } else {}
+                //robot.duckMotor.setPower(0);
+                
+            if(gamepad1.y){
+                robot.intake.setPower(1);
+                robot.intake.setDirection(CRServo.Direction.FORWARD);
+            } else if (gamepad1.a){
+                robot.intake.setPower(1);
+                robot.intake.setDirection(CRServo.Direction.REVERSE);
+            } else {
+                robot.intake.setPower(0);
+            }
+            
+            //assist in intake; automatically tilt the bucket down 
+            if(gamepad1.a 
+                && getBucketArmAngle() < -45d 
+                && 0 - horizontalSliderPos < HORIZONTAL_SLIDER_END_THRESHOLD
+                )
+            {
+                if(!manual){
+                    m_intake = true; 
+                    robot.bucketArm.setPosition(BUCKET_ARM_MIN_LIMIT);
+                    robot.bucketSwivel.setPosition(angleToBucketSwivelPos(BUCKET_SWIVEL_INTAKE_ANGLE));
+                }   
+            } else if(m_intake) {
+                m_intake = false; //we want to only do this once after we release the intake button 
+                robot.bucketSwivel.setPosition(angleToBucketSwivelPos(BUCKET_SWIVEL_COLLECTING_IDLE_POS));
+            }
+            
+            //finally set the bucket position (if it isn't being overriden by the intake assist)
+            if(!m_intake)
             robot.bucketSwivel.setPosition(getRelativeBucketPosOffset() + bucketSwivelTargetOffset);
             
             //resets tick values in case starting positions are messed up 
@@ -442,21 +479,6 @@ public class Main2 extends LinearOpMode {
             }
             
             //telemetry.addData("algebruh: ", bucketArmPosToAngle(angleToBucketArmPos(90d)));
-            
-            if(gamepad1.x){
-                //robot.duckMotor.setPower(1);
-            } else {}
-                //robot.duckMotor.setPower(0);
-                
-            if(gamepad1.y){
-                robot.intake.setPower(1);
-                robot.intake.setDirection(CRServo.Direction.FORWARD);
-            } else if (gamepad1.a){
-                robot.intake.setPower(1);
-                robot.intake.setDirection(CRServo.Direction.REVERSE);
-            } else {
-                robot.intake.setPower(0);
-            }
             
             mecanumDrive_Cartesian(strafe, drive, turn);
             //drive(drive, turn);
