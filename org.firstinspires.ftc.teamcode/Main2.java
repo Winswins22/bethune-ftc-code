@@ -25,7 +25,9 @@ public class Main2 extends LinearOpMode {
   private int stageIDX = 0;
   private boolean stageDone = false;
   private boolean activateArm = false;
+  private boolean activateDuck = false;
   private ElapsedTime armTimer = new ElapsedTime();
+  private ElapsedTime duckTimer = new ElapsedTime();
 
   HardwarePushbot robot = new HardwarePushbot(); // Use a Pushbot's hardware
 
@@ -72,6 +74,15 @@ public class Main2 extends LinearOpMode {
         this.updateArm();
       }
       this.updateWheel();
+
+      if (this.gamepad1.left_trigger >= 0.0){
+        this.activateDuck = true;
+        this.duckTimer.reset();
+      }
+      
+      if (this.activateDuck){
+        this.updateDuck();
+      }
     }
   }
 
@@ -155,6 +166,19 @@ public class Main2 extends LinearOpMode {
     robot.armServoRight.setPosition(1-this.ArmDefaultServoPosition);
     robot.armServoLeft.setPosition(this.ArmDefaultServoPosition);
 
+  }
+
+  public void updateDuck(){
+    if (this.duckTimer.seconds() < 1.0){
+      robot.duckWheel.setPower(0.4);
+    }
+    else if (this.duckTimer.seconds() < 2.0){
+      robot.duckWheel.setPower(1.0);
+    }
+    else{
+      robot.duckWheel.setPower(1.0);
+      this.activateDuck = false;
+    }
   }
 
   public void mecanumDrive_Cartesian(double x, double y, double rotation) {
