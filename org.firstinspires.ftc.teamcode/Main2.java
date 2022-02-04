@@ -30,19 +30,22 @@ public class Main2 extends LinearOpMode {
     //Remember that JOYSTICK is always clamped from -1 to 1
     //public static final double ROTATION_EXPONENT = 1.75;
     public static final double ROTATION_EXPONENT = 2.5d;
-    public static final double ROTATION_COEFFICIENT = 0.3d; //acts as max value
+    //public static final double ROTATION_COEFFICIENT = 0.3d; //acts as max value
+    public static final double ROTATION_COEFFICIENT = 0.5d; //acts as max value
     public static final double ROTATION_COEFFICIENT_SHIFT = 0.15d; //when slow-down is pressed
     public static final double ROTATION_OFFSET = 0.12d;
     
     //Same formula for back or forward
     public static final double FB_EXPONENT = 2.5d;
-    public static final double FB_COEFFICIENT = 0.6d; //acts as max value
+    //public static final double FB_COEFFICIENT = 0.6d; //acts as max value
+    public static final double FB_COEFFICIENT = 1.0d; //acts as max value
     public static final double FB_COEFFICIENT_SHIFT = 0.25d; //when slow-down is pressed
     public static final double FB_OFFSET = 0.12d;
     
     //Same formula as well
     public static final double LR_EXPONENT = 1.0d;
-    public static final double LR_COEFFICIENT = 0.5d; //acts as max value
+    //public static final double LR_COEFFICIENT = 0.5d; //acts as max value
+    public static final double LR_COEFFICIENT = 1.0d; //acts as max value
     public static final double LR_COEFFICIENT_SHIFT = 0.2d; //when slow-down is pressed
     public static final double LR_OFFSET = 0.12d;
     
@@ -228,7 +231,7 @@ public class Main2 extends LinearOpMode {
                 }
             }
             else {
-                if(gamepad1.left_bumper){
+                if(gamepad1.left_bumper || gamepad1.left_stick_button){
                     speedShift = true; //hold to slow the bot down
                 } else speedShift = false;
                 
