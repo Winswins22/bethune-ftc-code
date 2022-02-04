@@ -21,7 +21,7 @@ public class Main2 extends LinearOpMode {
   // Arm 
   private final double ArmDefaultServoPosition = 1;
   private final String[] stage = {"BucketUp", "PulleyUp", "PulleySlow", "PulleyStop", "BucketDump", "BucketUp", "PulleyDown", "PulleySlow", "PulleyStop", "BucketReset"};
-  private final double[] stageTime= {3.0, 1.0, 0.0, 0.10, 1.0, 0.5, 1.0, 0.10, 0.0, 1.0};
+  private final double[] stageTime= {0.0, 1.8, 0.5, 0.0, 1.0, 0.5, 0.6, 0.5, 0.0, 0.0};
   private int stageIDX = 0;
   private boolean stageDone = false;
   private boolean activateArm = false;
@@ -65,6 +65,7 @@ public class Main2 extends LinearOpMode {
 
       if (this.gamepad1.b && !this.activateArm) {
         this.activateArm = true;
+        this.armTimer.reset();
       }
 
       if (this.activateArm){
@@ -82,73 +83,61 @@ public class Main2 extends LinearOpMode {
   }
 
   public void updateArm() {
-    telemetry.addData("Arm", this.stageTime[this.stageIDX]);
-    telemetry.addData("armTimer", this.armTimer.seconds());
-    telemetry.addData("stageDone", this.stageDone);
-    telemetry.addData("stageIDX", this.stageIDX);
+    telemetry.addData("Arm", this.armTimer.seconds());
     if (this.armTimer.seconds() >= this.stageTime[this.stageIDX]) {
       this.stageIDX += 1;
       this.stageDone = false;
       telemetry.addData("stageIDX", this.stageIDX);
-      try {
-        Thread.sleep(2000);
-      }catch (InterruptedException e) {}
     }
     if (!this.stageDone) {
       switch (this.stageIDX) {
         case 0: // BucketUp
           // robot.armServoRight.setPosition(0.5);
-          robot.armServoLeft.setPosition(0.5);
+          robot.armServoLeft.setPosition(0.7);
           this.armTimer.reset();
           this.stageDone = true;
           telemetry.addData("Arm", "BucketUp");
           break;
         case 1: // PulleyUp
-          telemetry.addData("Arm", "PulleyUp");
-          telemetry.update();
           robot.armMotor.setPower(0.5);
-          telemetry.addData("Arm", "PulleyUp");
-          telemetry.update();
           this.armTimer.reset();
           this.stageDone = true;
           break;
-        // case 2: // PulleySlow going up
-        //   robot.armMotor.setPower(0.2);
-        //   this.armTimer.reset();
-        //   this.stageDone = true;
-        //   break;
-        // case 3: // PulleyStop
-        //   robot.armMotor.setPower(0.0);
-        //   this.armTimer.reset();
-        //   this.stageDone = true;
-        //   break;
-        // case 4: // BucketDump
-        //   robot.armServoRight.setPosition(1-0.45);
-        //   robot.armServoLeft.setPosition(0.45);
-        //   this.armTimer.reset();
-        //   this.stageDone = true;
-        //   break;
-        // case 5: // BucketUp
-        //   robot.armServoRight.setPosition(1-0.7);
-        //   robot.armServoLeft.setPosition(0.7);
-        //   this.armTimer.reset();
-        //   this.stageDone = true;
-        //   break;
-        // case 6: // PulleyDown 
-        //   robot.armMotor.setPower(-1);
-        //   this.armTimer.reset();
-        //   this.stageDone = true;
-        //   break;
-        // case 7: // PulleySlow going down
-        //   robot.armMotor.setPower(-0.2);
-        //   this.armTimer.reset();
-        //   this.stageDone = true;
-        //   break;
-        // case 8: // Pulley Stop
-        //   robot.armMotor.setPower(0.0);
-        //   this.armTimer.reset();
-        //   this.stageDone = true;
-        //   break;
+        case 2: // PulleySlow going up
+          robot.armMotor.setPower(0.2);
+          this.armTimer.reset();
+          this.stageDone = true;
+          break;
+        case 3: // PulleyStop
+          robot.armMotor.setPower(0.0);
+          this.armTimer.reset();
+          this.stageDone = true;
+          break;
+        case 4: // BucketDump
+          robot.armServoLeft.setPosition(0.45);
+          this.armTimer.reset();
+          this.stageDone = true;
+          break;
+        case 5: // BucketUp
+          robot.armServoLeft.setPosition(0.7);
+          this.armTimer.reset();
+          this.stageDone = true;
+          break;
+        case 6: // PulleyDown 
+          robot.armMotor.setPower(-1);
+          this.armTimer.reset();
+          this.stageDone = true;
+          break;
+        case 7: // PulleySlow going down
+          robot.armMotor.setPower(-0.2);
+          this.armTimer.reset();
+          this.stageDone = true;
+          break;
+        case 8: // Pulley Stop
+          robot.armMotor.setPower(0.0);
+          this.armTimer.reset();
+          this.stageDone = true;
+          break;
         case 9: // BucketReset
           resetArm();
           this.armTimer.reset();
