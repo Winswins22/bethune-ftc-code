@@ -63,7 +63,7 @@ public class Main2 extends LinearOpMode {
       // }else {
       //   robot.armMotor.setPower(0);
       // }
-      robot.duckWheel.setPower(this.gamepad1.left_trigger);
+      //robot.duckWheel.setPower(this.gamepad1.left_trigger);
 
       if (this.gamepad1.b && !this.activateArm) {
         this.activateArm = true;
@@ -75,7 +75,7 @@ public class Main2 extends LinearOpMode {
       }
       this.updateWheel();
 
-      if (this.gamepad1.left_trigger >= 0.0){
+      if (this.gamepad1.x){
         this.activateDuck = true;
         this.duckTimer.reset();
       }
@@ -176,7 +176,7 @@ public class Main2 extends LinearOpMode {
       robot.duckWheel.setPower(1.0);
     }
     else{
-      robot.duckWheel.setPower(1.0);
+      robot.duckWheel.setPower(0.0);
       this.activateDuck = false;
     }
   }
