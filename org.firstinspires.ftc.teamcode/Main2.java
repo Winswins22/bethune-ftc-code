@@ -30,17 +30,20 @@ public class Main2 extends LinearOpMode {
     //Remember that JOYSTICK is always clamped from -1 to 1
     //public static final double ROTATION_EXPONENT = 1.75;
     public static final double ROTATION_EXPONENT = 2.5d;
-    public static final double ROTATION_COEFFICIENT = 0.3d;
+    public static final double ROTATION_COEFFICIENT = 0.3d; //acts as max value
+    public static final double ROTATION_COEFFICIENT_SHIFT = 0.15d; //when slow-down is pressed
     public static final double ROTATION_OFFSET = 0.12d;
     
     //Same formula for back or forward
     public static final double FB_EXPONENT = 2.5d;
-    public static final double FB_COEFFICIENT = 0.6d;
+    public static final double FB_COEFFICIENT = 0.6d; //acts as max value
+    public static final double FB_COEFFICIENT_SHIFT = 0.25d; //when slow-down is pressed
     public static final double FB_OFFSET = 0.12d;
     
     //Same formula as well
     public static final double LR_EXPONENT = 1.0d;
-    public static final double LR_COEFFICIENT = 0.5d;
+    public static final double LR_COEFFICIENT = 0.5d; //acts as max value
+    public static final double LR_COEFFICIENT_SHIFT = 0.2d; //when slow-down is pressed
     public static final double LR_OFFSET = 0.12d;
     
     //MAX VERTICAL SLIDER VELOCITY IN TICKS/S
@@ -120,6 +123,9 @@ public class Main2 extends LinearOpMode {
         Standby
     }
     
+    //speed shift mode; slow down the bot drive
+    boolean speedShift = false;
+    
     @Override
     public void runOpMode() {
         
@@ -140,6 +146,7 @@ public class Main2 extends LinearOpMode {
         boolean m_dpadDown = false;
         boolean m_dpadUp = false;
         boolean m_startDown = false;
+        boolean m_rightShoulderDown = false;
         
         //for intake assist 
         boolean m_intake = false; 
@@ -222,19 +229,31 @@ public class Main2 extends LinearOpMode {
             }
             else {
                 if(gamepad1.left_bumper){
-                    assistState = AssistState.Collecting;
-                    resetAssistFlags();
-                    usingArmLevels = false; 
-                    m_lowering = false; //DEBUG
-                }
-                else if(gamepad1.right_bumper){
-                    assistState = AssistState.Delivering;
-                    resetAssistFlags();
-                    m_lowering = false; //DEBUG
-                }
+                    speedShift = true; //hold to slow the bot down
+                } else speedShift = false;
+                
+                if(gamepad1.right_bumper){
+                    if(!m_rightShoulderDown){
+                        m_rightShoulderDown = true;
+                        if(Math.abs(robot.horizontalSlider.getCurrentPosition()) > Math.abs((double)HORIZONTAL_SLIDER_LIMIT) / 2d
+                            || assistState == AssistState.Delivering
+                        ){
+                            assistState = AssistState.Collecting;    
+                            usingArmLevels = false;
+                        } else if(Math.abs(robot.horizontalSlider.getCurrentPosition()) < Math.abs((double)HORIZONTAL_SLIDER_LIMIT) / 2d
+                            || assistState == AssistState.Collecting    
+                        ){
+                            assistState = AssistState.Delivering;    
+                        }
+                        resetAssistFlags();
+                        m_lowering = false; 
+                    }
+                } else m_rightShoulderDown = false;
+                
                 if(assistState == AssistState.Standby)
                     setHorizontalSliderPos(horizontalTarget, HORIZONTAL_SLIDER_VELOCITY);
             }
+            telemetry.addData("collecting ", Math.abs(robot.horizontalSlider.getCurrentPosition()) > (double)HORIZONTAL_SLIDER_LIMIT / 2d);
             
             int verticalSliderVelocity = 0;
             int verticalTarget = 0;
@@ -522,11 +541,11 @@ public class Main2 extends LinearOpMode {
         x = Math.abs(x);
         y = Math.abs(y);
         
-        rotation = (double)positiveOrNegativeRotation * (ROTATION_COEFFICIENT * exp(rotation, ROTATION_EXPONENT) + (rotation>0 ? ROTATION_OFFSET : 0));
+        rotation = (double)positiveOrNegativeRotation * ((speedShift ? ROTATION_COEFFICIENT_SHIFT : ROTATION_COEFFICIENT)  * exp(rotation, ROTATION_EXPONENT) + (rotation>0 ? ROTATION_OFFSET : 0));
         
-        x = (double)positiveOrNegativeX * (FB_COEFFICIENT * exp(x, FB_EXPONENT) + (x>0 ? FB_OFFSET : 0));    
+        x = (double)positiveOrNegativeX * ((speedShift ? FB_COEFFICIENT_SHIFT : FB_COEFFICIENT)  * exp(x, FB_EXPONENT) + (x>0 ? FB_OFFSET : 0));    
         
-        y = (double)positiveOrNegativeY * (LR_COEFFICIENT * exp(y, LR_EXPONENT) + (y>0 ? LR_OFFSET : 0));    
+        y = (double)positiveOrNegativeY * ((speedShift ? LR_COEFFICIENT_SHIFT : LR_COEFFICIENT) * exp(y, LR_EXPONENT) + (y>0 ? LR_OFFSET : 0));    
             
     
         wheelSpeeds[0] = x + y - rotation;
