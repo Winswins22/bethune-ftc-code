@@ -21,7 +21,7 @@ public class Main2 extends LinearOpMode {
   // Arm 
   private final double ArmDefaultServoPosition = 1;
   private final String[] stage = {"BucketUp", "PulleyUp", "PulleySlow", "PulleyStop", "BucketDump", "BucketUp", "PulleyDown", "PulleySlow", "PulleyStop", "BucketReset"};
-  private final double[] stageTime= {0.0, 1.8, 0.5, 0.0, 1.0, 0.5, 0.6, 0.5, 0.0, 0.0};
+  private final double[] stageTime= {0.0, 1.9, 0.5, 0.0, 1.0, 0.5, 0.5, 1.1, 0.0, 0.0};
   private int stageIDX = 0;
   private boolean stageDone = false;
   private boolean activateArm = false;
@@ -92,7 +92,7 @@ public class Main2 extends LinearOpMode {
     if (!this.stageDone) {
       switch (this.stageIDX) {
         case 0: // BucketUp
-          // robot.armServoRight.setPosition(0.5);
+          robot.armServoRight.setPosition(0.3);
           robot.armServoLeft.setPosition(0.7);
           this.armTimer.reset();
           this.stageDone = true;
@@ -114,12 +114,14 @@ public class Main2 extends LinearOpMode {
           this.stageDone = true;
           break;
         case 4: // BucketDump
+          robot.armServoRight.setPosition(0.55);
           robot.armServoLeft.setPosition(0.45);
           this.armTimer.reset();
           this.stageDone = true;
           break;
         case 5: // BucketUp
           robot.armServoLeft.setPosition(0.7);
+          robot.armServoRight.setPosition(0.3);
           this.armTimer.reset();
           this.stageDone = true;
           break;
@@ -150,7 +152,7 @@ public class Main2 extends LinearOpMode {
   }
 
   public void resetArm() {
-    // robot.armServoRight.setPosition(-this.ArmDefaultServoPosition);
+    robot.armServoRight.setPosition(1-this.ArmDefaultServoPosition);
     robot.armServoLeft.setPosition(this.ArmDefaultServoPosition);
 
   }

@@ -97,9 +97,8 @@ public class HardwarePushbot
         duckWheel.setDirection(DcMotorSimple.Direction.REVERSE);
         intake.setDirection(DcMotorSimple.Direction.FORWARD);
         armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        
-        // armServoLeft.setDirection(Servo.Direction.REVERSE);
-        // armServoRight.setDirection(Servo.Direction.REVERSE);
+
+        armServoRight.setDirection(Servo.Direction.REVERSE);
     }
  }
 
