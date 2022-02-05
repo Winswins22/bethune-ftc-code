@@ -90,7 +90,7 @@ public class Main2 extends LinearOpMode {
       }
 
       if (this.activateArm){
-        this.updateArm(1);
+        this.updateArm(3);
       }
       
       if (this.activateDuck){
