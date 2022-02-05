@@ -16,7 +16,7 @@ public class Main2 extends LinearOpMode {
   private double turn;
   // private double max;
 
-  final double SPEED_MULTIPLIER = 0.81;
+  private final double SPEED_MULTIPLIER = 0.75;
   
   // Arm 
   private final double ArmDefaultServoPosition = 0.95;
@@ -24,7 +24,7 @@ public class Main2 extends LinearOpMode {
   private final double[] stageTime= {0.0, 0.0, 1.9, 0.5, 0.0, 1.0, 0.5, 0.5, 1.1, 0.0, 0.0};
   private int stageIDX = 0;
   private boolean stageDone = false;
-  private int stageIDX = 0;
+  private boolean activateArm = false;
   private ElapsedTime armTimer = new ElapsedTime();
 
   // duck
