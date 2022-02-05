@@ -24,9 +24,14 @@ public class Main2 extends LinearOpMode {
   private final double[] stageTime= {0.0, 0.0, 1.9, 0.5, 0.0, 1.0, 0.5, 0.5, 1.1, 0.0, 0.0};
   private int stageIDX = 0;
   private boolean stageDone = false;
-  private boolean activateArm = false;
-  private boolean activateDuck = false;
+  private int stageIDX = 0;
   private ElapsedTime armTimer = new ElapsedTime();
+
+  // duck
+  private int duckStage = 0;
+  private final double[] duckTime = {4.0, 4.0, 0.0};
+  private boolean duckStageDone = false;
+  private boolean activateDuck = false;
   private ElapsedTime duckTimer = new ElapsedTime();
 
   HardwarePushbot robot = new HardwarePushbot(); // Use a Pushbot's hardware
@@ -48,6 +53,12 @@ public class Main2 extends LinearOpMode {
 
     while(opModeIsActive()) {
 
+      telemetry.addData("duck", "");
+      telemetry.addData("done", this.duckStageDone);
+      telemetry.addData("stage", this.duckStage);
+      telemetry.addData("timer", this.duckTimer.seconds());
+      telemetry.update();
+
       if (this.gamepad1.right_bumper) {
         robot.intake.setPower(-1);
       } else if (this.gamepad1.left_bumper) {
@@ -63,20 +74,19 @@ public class Main2 extends LinearOpMode {
       // }else {
       //   robot.armMotor.setPower(0);
       // }
-      //robot.duckWheel.setPower(this.gamepad1.left_trigger);
+      // robot.duckWheel.setPower(this.gamepad1.left_trigger);
 
       if (this.gamepad1.b && !this.activateArm) {
         this.activateArm = true;
         this.armTimer.reset();
       }
+      if (this.gamepad1.x && !this.activateDuck){
+        this.activateDuck = true;
+        this.duckTimer.reset();
+      }
 
       if (this.activateArm){
         this.updateArm();
-      }
-
-      if (this.gamepad1.x){
-        this.activateDuck = true;
-        this.duckTimer.reset();
       }
       
       if (this.activateDuck){
@@ -94,11 +104,9 @@ public class Main2 extends LinearOpMode {
   }
 
   public void updateArm() {
-    telemetry.addData("Arm", this.armTimer.seconds());
     if (this.armTimer.seconds() >= this.stageTime[this.stageIDX]) {
       this.stageIDX += 1;
       this.stageDone = false;
-      telemetry.addData("stageIDX", this.stageIDX);
     }
     if (!this.stageDone) {
       switch (this.stageIDX) {
@@ -152,14 +160,12 @@ public class Main2 extends LinearOpMode {
           break;
         case 10: // BucketReset
           resetArm();
-          this.armTimer.reset();
           this.stageDone = true;
           this.stageIDX = 0;
           this.activateArm = false;
           break;
       }
     }
-    telemetry.update();
   }
 
   public void resetArm() {
@@ -169,10 +175,10 @@ public class Main2 extends LinearOpMode {
   }
 
   public void updateDuck(){
-    if (this.duckTimer.seconds() < 1.0){
-      robot.duckWheel.setPower(0.4);
+    if (this.duckTimer.seconds() < 0.5){
+      robot.duckWheel.setPower(0.8);
     }
-    else if (this.duckTimer.seconds() < 2.0){
+    else if (this.duckTimer.seconds() < 1.5){
       robot.duckWheel.setPower(1.0);
     }
     else{
