@@ -107,7 +107,6 @@ public class Main2 extends LinearOpMode {
           robot.armServoRight.setPosition(0.3);
           this.armTimer.reset();
           this.stageDone = true;
-          telemetry.addData("Arm", "BucketUp");
           break;
         case 2: // PulleyUp
           robot.armMotor.setPower(0.5);
@@ -157,6 +156,7 @@ public class Main2 extends LinearOpMode {
           this.stageDone = true;
           this.stageIDX = 0;
           this.activateArm = false;
+          break;
       }
     }
     telemetry.update();
