@@ -174,30 +174,16 @@ public class Main2 extends LinearOpMode {
   }
 
   public void updateDuck(){
-
-    telemetry.addData("executing", "");
-    if (this.duckTimer.seconds() >= this.duckTime[this.duckStage]) {
-      this.duckStage += 1;
-      this.duckStageDone = false;
+    if (this.duckTimer.seconds() < 0.5){
+      robot.duckWheel.setPower(0.8);
     }
-    telemetry.addData("Duck", this.duckStage);
-    if (!this.duckStageDone) {
-      switch (this.duckStage) {
-        case 0: //slow
-          robot.duckWheel.setPower(0.1);
-          this.duckStageDone = true;
-          this.duckTimer.reset();
-        case 1: // fast
-          robot.duckWheel.setPower(1.0);
-          this.duckStageDone = true;
-          this.duckTimer.reset();
-        case 2: // reset
-          //robot.duckWheel.setPower(0.0);
-          this.activateDuck = false;
-          this.duckStage = 0;
-      }
+    else if (this.duckTimer.seconds() < 1.5){
+      robot.duckWheel.setPower(1.0);
     }
-    telemetry.update();
+    else{
+      robot.duckWheel.setPower(0.0);
+      this.activateDuck = false;
+    }
   }
 
   public void mecanumDrive_Cartesian(double x, double y, double rotation) {
