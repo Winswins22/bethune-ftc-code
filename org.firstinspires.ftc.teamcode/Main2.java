@@ -175,8 +175,8 @@ public class Main2 extends LinearOpMode {
   }
 
   public void updateDuck(){
-    if (this.duckTimer.seconds() < 0.5){
-      robot.duckWheel.setPower(0.8);
+    if (this.duckTimer.seconds() < 0.75){
+      robot.duckWheel.setPower(0.6);
     }
     else if (this.duckTimer.seconds() < 1.5){
       robot.duckWheel.setPower(1.0);

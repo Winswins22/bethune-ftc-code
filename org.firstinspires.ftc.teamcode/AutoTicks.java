@@ -75,7 +75,7 @@ public class AutoTicks extends LinearOpMode {
     private boolean slept = false;
     private double defaultPosition = 0.95;
 
-    public int duckPosition;
+    public int duckPosition = -1;
 
     /* Declare OpMode members. */
     HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -140,13 +140,15 @@ public class AutoTicks extends LinearOpMode {
                 didOnce = true;
 
                 // scan
-                duckPosition = scan();
+                if (duckPosition == -1){
+                  duckPosition = scan();
+                }
                 telemetry.addData("duckPosition", duckPosition);
                 telemetry.update();
                 
                 // // // move to carosel
-                // moveMeters(0, 1, 0, 0.2, METERS_PER_TILE / 2);
-                // move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                moveMeters(0, 1, 0, 0.2, 3 * METERS_PER_TILE / 2);
                 
                 // moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 0.8);
                 // move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
