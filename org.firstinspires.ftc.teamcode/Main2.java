@@ -21,7 +21,11 @@ public class Main2 extends LinearOpMode {
   // Arm 
   private final double ArmDefaultServoPosition = 0.95;
   private final String[] stage = {"dummy", "BucketUp", "PulleyUp", "PulleySlow", "PulleyStop", "BucketDump", "BucketUp", "PulleyDown", "PulleySlow", "PulleyStop", "BucketReset"};
-  private final double[] stageTime= {0.0, 0.0, 1.9, 0.5, 0.0, 1.0, 0.5, 0.5, 1.1, 0.0, 0.0};
+  private double[] stageTime;
+  private final double[] stageTime3= {0.0, 0.0, 1.9, 0.5, 0.0, 1.0, 0.5, 0.5, 1.1, 0.0, 0.0};
+  private final double[] stageTime2= {0.0, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, 0.2, 0.5, 0.0, 0.0};
+  private final double[] stageTime1= {0.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.5, 0.0, 2.0, 0.0, 0.0};
+
   private int stageIDX = 0;
   private boolean stageDone = false;
   private boolean activateArm = false;
@@ -86,7 +90,7 @@ public class Main2 extends LinearOpMode {
       }
 
       if (this.activateArm){
-        this.updateArm();
+        this.updateArm(3);
       }
       
       if (this.activateDuck){
@@ -103,7 +107,17 @@ public class Main2 extends LinearOpMode {
     mecanumDrive_Cartesian(-this.gamepad1.right_stick_x, this.gamepad1.right_stick_y, this.gamepad1.left_stick_x);
   }
 
-  public void updateArm() {
+  public void updateArm(int level) {
+    if (level == 1){
+      stageTime = stageTime1;
+    }
+    else if (level == 2){
+      stageTime = stageTime2;
+    }
+    else if (level == 3){
+      stageTime = stageTime3;
+    }
+
     if (this.armTimer.seconds() >= this.stageTime[this.stageIDX]) {
       this.stageIDX += 1;
       this.stageDone = false;
@@ -175,8 +189,8 @@ public class Main2 extends LinearOpMode {
   }
 
   public void updateDuck(){
-    if (this.duckTimer.seconds() < 0.5){
-      robot.duckWheel.setPower(0.8);
+    if (this.duckTimer.seconds() < 0.75){
+      robot.duckWheel.setPower(0.6);
     }
     else if (this.duckTimer.seconds() < 1.5){
       robot.duckWheel.setPower(1.0);

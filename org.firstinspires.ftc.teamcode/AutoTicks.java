@@ -75,7 +75,7 @@ public class AutoTicks extends LinearOpMode {
     private boolean slept = false;
     private double defaultPosition = 0.95;
 
-    public int duckPosition;
+    public int duckPosition = -1;
 
     /* Declare OpMode members. */
     HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -132,7 +132,7 @@ public class AutoTicks extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        robot.hand.setPosition(defaultPosition+0.5);
+        //robot.hand.setPosition(defaultPosition+0.5);
         
         
         while (opModeIsActive()){
@@ -140,13 +140,15 @@ public class AutoTicks extends LinearOpMode {
                 didOnce = true;
 
                 // scan
-                duckPosition = scan();
+                if (duckPosition == -1){
+                  duckPosition = scan();
+                }
                 telemetry.addData("duckPosition", duckPosition);
                 telemetry.update();
                 
                 // // // move to carosel
-                // moveMeters(0, 1, 0, 0.2, METERS_PER_TILE / 2);
-                // move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                moveMeters(0, 1, 0, 0.2, 3 * METERS_PER_TILE / 2);
                 
                 // moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 0.8);
                 // move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
@@ -170,12 +172,6 @@ public class AutoTicks extends LinearOpMode {
                 
                 // // move to the shipping hub
                 // moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 0.2);
-                
-                // // """tensorflow"""
-                // if (!slept){
-                //   sleep(slept, 3);
-                //   slept = true;
-                // }
                 
                 // moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 1.8);
                 
@@ -407,46 +403,7 @@ public class AutoTicks extends LinearOpMode {
         robot.duckWheel.setPower(0);
         duck = false;
     }
-    
-  // 0-0.20 go up
-  // 0.20-2.0 stop motor, turn bucket
-  // 2.0-2.5 default position, go back down
-  // 2.5-3.0 stop motor
-  public boolean autoArm() {//output arm
-    if (armTimer.seconds() <= 0.3) {
-      robot.hand.setPosition(0.7);
-      robot.arm.setPower(1);
-    }
-    else if (armTimer.seconds() <= 1.5){
-      robot.arm.setPower(0);
-      robot.hand.setPosition(0.52);
-    }
-    else if (armTimer.seconds() <= 1.75) {
-      robot.arm.setPower(-0.80);
-      robot.hand.setPosition(defaultPosition);
-    }
-    else if (armTimer.seconds() <= 1.80) {
-      robot.arm.setPower(0);
-    }else {
-      return true;
-    }
-    return false;
-  }
 
-  public void sleep(boolean sleptAlready, int sleepSecs){    
-    if (sleptAlready){
-      return;
-    }
-    ElapsedTime sleepTimer = new ElapsedTime();
-    
-    while (true){
-      if (sleepTimer.seconds() > sleepSecs){
-        return;
-      } 
-    }
-  }        
-
-  
   // Scan for ducks
   // Returns the level that the duck is on.
   public int scan(){
