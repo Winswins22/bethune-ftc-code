@@ -89,6 +89,15 @@ public class Main2 extends LinearOpMode {
         this.duckTimer.reset();
       }
 
+      if (this.gamepad1.y) {
+        robot.armServoLeft.setPosition(0.7);
+        robot.armServoRight.setPosition(0.3);
+      }
+
+      if (this.gamepad1.a) {
+        this.resetArm();
+      }
+
       if (this.activateArm){
         this.updateArm(3);
       }
@@ -179,6 +188,8 @@ public class Main2 extends LinearOpMode {
           this.activateArm = false;
           break;
       }
+
+
     }
   }
 
