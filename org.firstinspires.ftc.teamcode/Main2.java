@@ -16,7 +16,7 @@ public class Main2 extends LinearOpMode {
   private double turn;
   // private double max;
 
-  private final double SPEED_MULTIPLIER = 0.75;
+  private final double SPEED_MULTIPLIER = 0.55;
   
   // Arm 
   private final double ArmDefaultServoPosition = 0.95;
