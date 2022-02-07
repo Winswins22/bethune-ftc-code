@@ -47,6 +47,19 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 @Autonomous(name="Auto Wheels 2.0", group="mode")
 
 public class AutoTicks extends LinearOpMode {
+
+    // Arm 
+    private final double ArmDefaultServoPosition = 0.95;
+    private final String[] stage = {"dummy", "BucketUp", "PulleyUp", "PulleySlow", "PulleyStop", "BucketDump", "BucketUp", "PulleyDown", "PulleySlow", "PulleyStop", "BucketReset"};
+    private double[] stageTime;
+    private final double[] stageTime3= {0.0, 0.0, 1.9, 0.5, 0.0, 1.0, 0.5, 0.5, 1.1, 0.0, 0.0};
+    private final double[] stageTime2= {0.0, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, 0.2, 0.5, 0.0, 0.0};
+    private final double[] stageTime1= {0.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.5, 0.0, 2.0, 0.0, 0.0};
+
+    private int stageIDX = 0;
+    private boolean stageDone = false;
+    private boolean activatedArm = false;
+    private ElapsedTime armTimer = new ElapsedTime();
     
     //Approximate field length: 358.2cm
     //approximate field width: 238.44cm
@@ -66,13 +79,11 @@ public class AutoTicks extends LinearOpMode {
     public static final double METERS_PER_DIAGONAL_TILE = 1.3;
     
     public boolean didOnce = false;
+    public boolean didDuck = false;
     boolean runArm = false;
     
     private ElapsedTime duckTimer = new ElapsedTime();
-    private ElapsedTime armTimer = new ElapsedTime();
     
-    private boolean duck = true;
-    private boolean slept = false;
     private double defaultPosition = 0.95;
 
     public int duckPosition = -1;
@@ -130,6 +141,10 @@ public class AutoTicks extends LinearOpMode {
         telemetry.update();
         initMotors();
 
+        resetArm();
+        robot.armServoLeft.setPosition(0.7);
+        robot.armServoRight.setPosition(0.3);
+        
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         //robot.hand.setPosition(defaultPosition+0.5);
@@ -139,59 +154,60 @@ public class AutoTicks extends LinearOpMode {
             if (!didOnce){
                 didOnce = true;
 
-                // scan
+                //scan
                 if (duckPosition == -1){
                   duckPosition = scan();
                 }
                 telemetry.addData("duckPosition", duckPosition);
                 telemetry.update();
+                //duckPosition = 1;
                 
-                // // // move to carosel
-                move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
-                moveMeters(0, 1, 0, 0.2, 3 * METERS_PER_TILE / 2);
-                
-                // moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 0.8);
-                // move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
-                // moveMeters(0, 1, 0, 0.05, METERS_PER_TILE / 4);
+                // move to carosel
+                moveMeters(0, 1, 0, 0.2, 1 * METERS_PER_TILE * 0.5);
+                moveMeters(0, 1, 0, 0.1, 1 * METERS_PER_TILE * 0.15);
     
-                // // // duck wheel code here
-                // if (duck){
-                //     goForwardsSlowly();
-                //     rotateDuckWheel(1, -6000);
-                //     initMotors();
-                //     duck = false;
-                // }
+                // // duck wheel code here
+                telemetry.addData("duckTimer", duckTimer.seconds());
+                telemetry.addData("didDuck", didDuck);
+                telemetry.update();
+                if (!didDuck){
+                    goForwardsSlowly();
+                    duckTimer.reset();
+                    while (!didDuck){
+                      doDuck();
+                    }
+                    initMotors();
+                }
                 
-                // // // move back a little for rotation space
-                // moveMeters(0, -1, 0, 0.3, METERS_PER_TILE / 2);
-                // move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
+                // // move back a little for rotation space
+                moveMeters(0, -1, 0, 0.2, METERS_PER_TILE * 0.4);
+                moveMeters(-1, 0, 0, 0.2, METERS_PER_TILE * 0.8);
+                moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 1.4);
+                move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 4);
                 
-                // // slam into the back wall to realign
-                // moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 4);
                 
+                // move to the shipping hub
+                if (duckPosition == 1){
+                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 0.68);
+                }
+                else {
+                  moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 0.8);
+                }
                 
-                // // move to the shipping hub
-                // moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 0.2);
-                
-                // moveMeters(0, -1, 0, 0.3, METERS_PER_TILE * 1.8);
-                
-                // // face the shipping hub
-                // move(0, 0, -1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
-                // // insert arm code here
-                
-                // armTimer.reset();
-                // while (true) {
-                //     if (autoArm()) {
-                //         armTimer.reset();
-                //         break;
-                //     }
-                // }
-                // // end arm code
-                // // face the warehouse
-                // move(0, 0, -1, 0.2, (int)(TICKS_ROTATE_90_DEGREES));
+                // insert arm code here
+                while (!activatedArm){
+                  updateArm(duckPosition);
+                }
+
+
+                // face the warehouse
+                moveMeters(0, 1, 0, 0.3, METERS_PER_TILE * 0.8);
+                move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
+                moveMeters(1, 0, 0, 0.3, METERS_PER_TILE * 0.5);
     
                 // // move to the warehouse
-                // moveMeters(0, 1, 0, 0.3, METERS_PER_TILE / 2);
+                moveMeters(0, 1, 0, 0.2, METERS_PER_TILE * 2);
                 // move(0, 0, 1, 0.2, TICKS_ROTATE_90_DEGREES);
                 // moveMeters(0, 1, 0, 0.3, METERS_PER_TILE);
                 // move(0, 0, -1, 0.2, TICKS_ROTATE_90_DEGREES);
@@ -205,7 +221,7 @@ public class AutoTicks extends LinearOpMode {
         
         robot.frontRight.setDirection(DcMotor.Direction.REVERSE); 
         robot.backRight.setDirection(DcMotor.Direction.REVERSE);
-        robot.frontLeft.setDirection(DcMotor.Direction.REVERSE); 
+        robot.frontLeft.setDirection(DcMotor.Direction.FORWARD); 
         robot.backLeft.setDirection(DcMotor.Direction.FORWARD);
         robot.duckWheel.setDirection(DcMotor.Direction.FORWARD);
         
@@ -236,7 +252,7 @@ public class AutoTicks extends LinearOpMode {
     
     // use power to move motors very slowly during duck spinning
     public void goForwardsSlowly(){
-      double power = 0.02;
+      double power = 0.05;
       robot.frontLeft.setPower(power);
       robot.frontRight.setPower(power);
       robot.backLeft.setPower(power);
@@ -387,22 +403,22 @@ public class AutoTicks extends LinearOpMode {
         return TICKS_PER_METER * (double)ticks;
     }
     
-    public void rotateDuckWheel(double speed, int ticksTarget){
-        robot.duckWheel.setTargetPosition(robot.duckWheel.getCurrentPosition() + ticksTarget);
-        // Turn On RUN_TO_POSITION
-        robot.duckWheel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        // Start motion;
-        robot.duckWheel.setPower(speed);
+    // public void rotateDuckWheel(double speed, int ticksTarget){
+    //     robot.duckWheel.setTargetPosition(robot.duckWheel.getCurrentPosition() + ticksTarget);
+    //     // Turn On RUN_TO_POSITION
+    //     robot.duckWheel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    //     // Start motion;
+    //     robot.duckWheel.setPower(speed);
         
-        while (opModeIsActive() && robot.duckWheel.isBusy()){
-            telemetry.addData("Motors are running to Positions", ticksTarget);
-            telemetry.addData("duckWheel progress", robot.duckWheel.getTargetPosition() - robot.duckWheel.getCurrentPosition());
-            telemetry.update();
-        }
+    //     while (opModeIsActive() && robot.duckWheel.isBusy()){
+    //         telemetry.addData("Motors are running to Positions", ticksTarget);
+    //         telemetry.addData("duckWheel progress", robot.duckWheel.getTargetPosition() - robot.duckWheel.getCurrentPosition());
+    //         telemetry.update();
+    //     }
         
-        robot.duckWheel.setPower(0);
-        duck = false;
-    }
+    //     robot.duckWheel.setPower(0);
+    //     duck = false;
+    // }
 
   // Scan for ducks
   // Returns the level that the duck is on.
@@ -506,6 +522,25 @@ public class AutoTicks extends LinearOpMode {
     return;
   }
 
+  public void doDuck(){
+  
+    telemetry.addData("duckTimer", duckTimer.seconds());
+    telemetry.addData("didDuck", didDuck);
+    telemetry.update();
+
+    if (duckTimer.seconds() < 0.5){
+      robot.duckWheel.setPower(0.6);
+    }
+    else if (duckTimer.seconds() < 1.5){
+      robot.duckWheel.setPower(1.0);
+    }
+    else{
+      robot.duckWheel.setPower(0.0);
+      didDuck = true;
+    }
+  }
+
+
   private int calculateLevel() {
     String spot1;
     String spot2;
@@ -555,6 +590,88 @@ public class AutoTicks extends LinearOpMode {
     else {
       return 1;
     }
+  }
+
+  
+  public void updateArm(int level) {
+    if (level == 1){
+      stageTime = stageTime1;
+    }
+    else if (level == 2){
+      stageTime = stageTime2;
+    }
+    else if (level == 3){
+      stageTime = stageTime3;
+    }
+
+    if (armTimer.seconds() >= stageTime[stageIDX]) {
+      stageIDX += 1;
+      stageDone = false;
+    }
+    if (!stageDone) {
+      switch (stageIDX) {
+        case 1: // BucketUp
+          robot.armServoLeft.setPosition(0.7);
+          robot.armServoRight.setPosition(0.3);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 2: // PulleyUp
+          robot.armMotor.setPower(0.5);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 3: // PulleySlow going up
+          robot.armMotor.setPower(0.2);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 4: // PulleyStop
+          robot.armMotor.setPower(0.0);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 5: // BucketDump
+          robot.armServoRight.setPosition(0.55);
+          robot.armServoLeft.setPosition(0.45);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 6: // BucketUp
+          robot.armServoLeft.setPosition(0.7);
+          robot.armServoRight.setPosition(0.3);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 7: // PulleyDown 
+          robot.armMotor.setPower(-1);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 8: // PulleySlow going down
+          robot.armMotor.setPower(-0.2);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 9: // Pulley Stop
+          robot.armMotor.setPower(0.0);
+          armTimer.reset();
+          stageDone = true;
+          break;
+        case 10: // BucketReset
+          resetArm();
+          stageDone = true;
+          stageIDX = 0;
+          activatedArm = true;
+          break;
+      }
+    }
+  }
+
+  public void resetArm() {
+    robot.armServoRight.setPosition(1-ArmDefaultServoPosition);
+    robot.armServoLeft.setPosition(ArmDefaultServoPosition);
+
   }
 
 }
