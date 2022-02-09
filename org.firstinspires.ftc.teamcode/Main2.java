@@ -16,13 +16,13 @@ public class Main2 extends LinearOpMode {
   private double turn;
   // private double max;
 
-  private final double SPEED_MULTIPLIER = 0.55;
+  private final double SPEED_MULTIPLIER = 0.60;
   
   // Arm 
   private final double ArmDefaultServoPosition = 0.95;
   private final String[] stage = {"dummy", "BucketUp", "PulleyUp", "PulleySlow", "BucketDump", "BucketUp", "PulleyDown", "PulleySlow", "BucketReset"};
   private double[] stageTime;
-  private final double[] stageTime3= {0.0, 0.0, 0.8, 0.5, 1.0, 0.5, 0.6, 1.1, 0.0};
+  private final double[] stageTime3= {0.0, 0.0, 0.7, 0.5, 1.0, 0.5, 0.4, 1.5, 0.0};
   private final double[] stageTime2= {0.0, 0.0, 0.5, 0.5, 1.0, 0.5, 0.2, 0.5, 0.0};
   private final double[] stageTime1= {0.0, 0.0, 0.2, 0.5, 1.0, 0.5, 0.0, 2.0, 0.0};
 
@@ -151,8 +151,8 @@ public class Main2 extends LinearOpMode {
           break;
         case 4: // BucketDump
           robot.armMotor.setPower(0.0);
-          robot.armServoRight.setPosition(0.55);
-          robot.armServoLeft.setPosition(0.45);
+          robot.armServoRight.setPosition(0.60);
+          robot.armServoLeft.setPosition(0.40);
           this.armTimer.reset();
           this.stageDone = true;
           break;
